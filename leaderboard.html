@@ -23,39 +23,54 @@
 
     <!-- AppKit (WalletConnect) ESM -->
     <script type="module">
-        import { createAppKit, EthersAdapter } from 'https://esm.run/@reown/appkit/ethers'
-        import { mainnet } from 'https://esm.run/@reown/appkit/networks'
+        async function initAppKit() {
+            const cdns = [
+                'https://esm.sh/@reown/appkit/ethers?bundle',
+                'https://cdn.jsdelivr.net/npm/@reown/appkit/ethers/+esm',
+                'https://esm.run/@reown/appkit/ethers'
+            ];
 
-        const projectId = '20f947d147b6150ebcb5510766f823dd';
-        const networks = [mainnet];
-        const ethersAdapter = new EthersAdapter();
+            for (const url of cdns) {
+                try {
+                    const { createAppKit, EthersAdapter } = await import(url);
+                    const networkUrl = url.replace('/ethers', '/networks');
+                    const { mainnet } = await import(networkUrl);
 
-        const modal = createAppKit({
-            adapters: [ethersAdapter],
-            networks,
-            metadata: {
-                name: 'Zico Rush',
-                description: 'GameFi Airdrop App',
-                url: window.location.origin,
-                icons: [window.location.origin + '/assets/icons/icon-192.png']
-            },
-            projectId,
-            features: { analytics: true }
-        });
+                    const projectId = '20f947d147b6150ebcb5510766f823dd';
+                    const networks = [mainnet];
+                    const ethersAdapter = new EthersAdapter();
 
-        window.appKitModal = modal;
+                    const modal = createAppKit({
+                        adapters: [ethersAdapter],
+                        networks,
+                        metadata: {
+                            name: 'Zico Rush',
+                            description: 'GameFi Airdrop App',
+                            url: window.location.origin,
+                            icons: [window.location.origin + '/assets/icons/icon-192.png']
+                        },
+                        projectId,
+                        features: { analytics: true }
+                    });
 
-        // Handle account changes
-        modal.subscribeState(async (state) => {
-            const address = modal.getAddress();
-            if (address && window.walletState && !window.walletState.connected) {
-                console.log("[AppKit] Connected:", address);
-                if (window.walletState.wallet && window.walletState.wallet.toLowerCase() !== address.toLowerCase()) {
-                    localStorage.setItem('dr_wallet', address.toLowerCase());
-                    location.reload();
+                    window.appKitModal = modal;
+
+                    modal.subscribeState(async (state) => {
+                        const address = modal.getAddress();
+                        if (address && window.walletState && !window.walletState.connected) {
+                            if (window.walletState.wallet && window.walletState.wallet.toLowerCase() !== address.toLowerCase()) {
+                                localStorage.setItem('dr_wallet', address.toLowerCase());
+                                location.reload();
+                            }
+                        }
+                    });
+                    return;
+                } catch (err) {
+                    console.warn(`Leaderboard AppKit Load Fail (${url}):`, err.message);
                 }
             }
-        });
+        }
+        initAppKit();
     </script>
     <style>
         .lb-container {
