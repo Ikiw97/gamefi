@@ -21,43 +21,70 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <!-- Global Error Debugger (Visible on Mobile) -->
+    <script>
+        window.appKitInitError = null;
+        window.LOG_BUFFER = [];
+        const originalLog = console.log;
+        console.log = function (...args) {
+            window.LOG_BUFFER.push("[LOG] " + args.join(" "));
+            if (window.LOG_BUFFER.length > 20) window.LOG_BUFFER.shift();
+            originalLog.apply(console, args);
+        };
+        const originalError = console.error;
+        console.error = function (...args) {
+            window.LOG_BUFFER.push("[ERR] " + args.join(" "));
+            if (window.LOG_BUFFER.length > 20) window.LOG_BUFFER.shift();
+            originalError.apply(console, args);
+        };
+    </script>
+
     <!-- AppKit (WalletConnect) ESM -->
     <script type="module">
-        import { createAppKit, EthersAdapter } from 'https://esm.run/@reown/appkit/ethers'
-        import { mainnet } from 'https://esm.run/@reown/appkit/networks'
+        async function initAppKit() {
+            console.log("AppKit esm.sh init start...");
+            try {
+                // Using esm.sh which is often more robust for mobile browsers
+                const { createAppKit, EthersAdapter } = await import('https://esm.sh/@reown/appkit/ethers');
+                const { mainnet } = await import('https://esm.sh/@reown/appkit/networks');
 
-        const projectId = '20f947d147b6150ebcb5510766f823dd';
-        const networks = [mainnet];
-        const ethersAdapter = new EthersAdapter();
+                const projectId = '20f947d147b6150ebcb5510766f823dd';
+                const networks = [mainnet];
+                const ethersAdapter = new EthersAdapter();
 
-        const modal = createAppKit({
-            adapters: [ethersAdapter],
-            networks,
-            metadata: {
-                name: 'Zico Rush',
-                description: 'GameFi Airdrop App',
-                url: window.location.origin,
-                icons: [window.location.origin + '/assets/icons/icon-192.png']
-            },
-            projectId,
-            features: { analytics: true }
-        });
+                const modal = createAppKit({
+                    adapters: [ethersAdapter],
+                    networks,
+                    metadata: {
+                        name: 'Zico Rush',
+                        description: 'GameFi Airdrop App',
+                        url: window.location.origin,
+                        icons: [window.location.origin + '/assets/icons/icon-192.png']
+                    },
+                    projectId,
+                    features: {
+                        analytics: true
+                    }
+                });
 
-        window.appKitModal = modal;
+                window.appKitModal = modal;
+                console.log("AppKit Loaded Success");
 
-        // Handle account changes
-        modal.subscribeState(async (state) => {
-            const address = modal.getAddress();
-            if (address && window.walletState && !window.walletState.connected) {
-                console.log("[AppKit] Connected:", address);
-                if (typeof window.onWalletConnectUI === 'function') {
-                    window.onWalletConnectUI(address);
-                }
-            } else if (!address && window.walletState && window.walletState.connected) {
-                console.log("[AppKit] Disconnected");
-                // Optional: clearWalletData();
+                modal.subscribeState(async (state) => {
+                    const address = modal.getAddress();
+                    if (address && window.walletState && !window.walletState.connected) {
+                        console.log("Account Change:", address);
+                        if (typeof window.onWalletConnectUI === 'function') {
+                            window.onWalletConnectUI(address);
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("AppKit Fail:", err.message);
+                window.appKitInitError = err.message || "Unknown dynamic import error";
             }
-        });
+        }
+        initAppKit();
     </script>
     <!-- Pixel Font (VT323) and Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1910,7 +1937,18 @@
                                 alert('Connection failed: ' + err.message);
                             }
                         } else {
-                            alert('Connection module not ready or no wallet found. If you are on mobile, use a stable connection or open the site inside the MetaMask app.');
+                            let msg = 'Connection module not ready or no wallet found.';
+                            if (window.appKitInitError) msg += ' (Error: ' + window.appKitInitError + ')';
+
+                            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                            if (isMobile) {
+                                if (confirm(msg + '\n\nTry opening directly in the MetaMask app?')) {
+                                    window.location.href = 'https://metamask.app.link/dapp/' + window.location.host + window.location.pathname;
+                                }
+                            } else {
+                                alert(msg + ' Please ensure you have a wallet extension installed or use a stable connection.');
+                            }
+
                             if (btnText) btnText.textContent = 'Connect Wallet';
                         }
                     }
