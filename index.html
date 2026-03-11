@@ -42,47 +42,58 @@
     <!-- AppKit (WalletConnect) ESM -->
     <script type="module">
         async function initAppKit() {
-            console.log("AppKit esm.sh init start...");
-            try {
-                // Using ?bundle to reduce total requests on mobile
-                const { createAppKit, EthersAdapter } = await import('https://esm.sh/@reown/appkit/ethers?bundle');
-                const { mainnet } = await import('https://esm.sh/@reown/appkit/networks?bundle');
+            const cdns = [
+                'https://esm.sh/@reown/appkit/ethers?bundle',
+                'https://cdn.jsdelivr.net/npm/@reown/appkit/ethers/+esm',
+                'https://esm.run/@reown/appkit/ethers'
+            ];
 
-                const projectId = '20f947d147b6150ebcb5510766f823dd';
-                const networks = [mainnet];
-                const ethersAdapter = new EthersAdapter();
+            let lastErr = null;
+            for (const url of cdns) {
+                console.log(`Trying AppKit direct load from: ${url}...`);
+                try {
+                    const { createAppKit, EthersAdapter } = await import(url);
+                    // Also need networks
+                    const networkUrl = url.replace('/ethers', '/networks');
+                    const { mainnet } = await import(networkUrl);
 
-                const modal = createAppKit({
-                    adapters: [ethersAdapter],
-                    networks,
-                    metadata: {
-                        name: 'Zico Rush',
-                        description: 'GameFi Airdrop App',
-                        url: window.location.origin,
-                        icons: [window.location.origin + '/assets/icons/icon-192.png']
-                    },
-                    projectId,
-                    features: {
-                        analytics: true
-                    }
-                });
+                    const projectId = '20f947d147b6150ebcb5510766f823dd';
+                    const networks = [mainnet];
+                    const ethersAdapter = new EthersAdapter();
 
-                window.appKitModal = modal;
-                console.log("AppKit Loaded Success");
+                    const modal = createAppKit({
+                        adapters: [ethersAdapter],
+                        networks,
+                        metadata: {
+                            name: 'Zico Rush',
+                            description: 'GameFi Airdrop App',
+                            url: window.location.origin,
+                            icons: [window.location.origin + '/assets/icons/icon-192.png']
+                        },
+                        projectId,
+                        features: { analytics: true }
+                    });
 
-                modal.subscribeState(async (state) => {
-                    const address = modal.getAddress();
-                    if (address && window.walletState && !window.walletState.connected) {
-                        console.log("Account Change:", address);
-                        if (typeof window.onWalletConnectUI === 'function') {
-                            window.onWalletConnectUI(address);
+                    window.appKitModal = modal;
+                    console.log("AppKit Loaded Success!");
+                    window.appKitInitError = null; // Clear if previously failed
+
+                    modal.subscribeState(async (state) => {
+                        const address = modal.getAddress();
+                        if (address && window.walletState && !window.walletState.connected) {
+                            if (typeof window.onWalletConnectUI === 'function') {
+                                window.onWalletConnectUI(address);
+                            }
                         }
-                    }
-                });
-            } catch (err) {
-                console.error("AppKit Fail:", err.message);
-                window.appKitInitError = err.message || "Unknown dynamic import error";
+                    });
+                    return; // Success, exit loop
+                } catch (err) {
+                    console.warn(`Failed URL ${url}:`, err.message);
+                    lastErr = err.message;
+                }
             }
+            window.appKitInitError = lastErr || "All CDNs failed to load AppKit";
+            console.error("AppKit completely failed to load.");
         }
         initAppKit();
     </script>
@@ -1886,7 +1897,7 @@
         }
 
         // ── Connect Wallet ──
-        async function connectWallet() {
+                async function connectWallet() {
             // Disconnect if already connected
             if (playerState.connected || playerState.wallet) {
                 if (confirm('Disconnect wallet?')) {
@@ -1921,23 +1932,23 @@
                     alert("Failed to open connection module. Please refresh the page.");
                 }
             } else {
-                // Fail-Fast: If it's mobile and we already have a module error
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                if (isMobile && window.appKitInitError) {
-                    if (confirm('Connection system failed to load. Open in MetaMask App instead?')) {
-                        const dappUrl = window.location.host + window.location.pathname + window.location.search;
-                        window.location.href = 'metamask://dapp/' + dappUrl;
-                    }
-                    return;
-                }
-
                 const btnText = document.getElementById('connectBtnText');
                 if (btnText) btnText.textContent = 'Preparing...';
 
+                // Fail-Fast: If we already know there is a module error
+                if (window.appKitInitError) {
+                    let msg = 'Connection system failed to load.\n\nError: ' + window.appKitInitError;
+                    msg += '\n\nTroubleshoot:\n1. Check your internet connection.\n2. In mobile browser, ensure you are NOT in "Private/Incognito" mode.\n3. Or open this page directly inside MetaMask browser if external connection fails.';
+                    alert(msg);
+                    if (btnText) btnText.textContent = 'Connect Wallet';
+                    return;
+                }
+
                 let attempts = 0;
-                const maxAttempts = 10; // 5 seconds is enough wait
+                const maxAttempts = 16; // ~8 seconds wait
                 const interval = setInterval(async () => {
                     attempts++;
+                    // Check for modal or ethereum during polling
                     if (window.appKitModal) {
                         clearInterval(interval);
                         try {
@@ -1945,39 +1956,28 @@
                         } catch (e) {
                             console.error("AppKit delayed open error:", e);
                         }
+                    } else if (window.ethereum) {
+                        clearInterval(interval);
+                        try {
+                            const provider = new ethers.BrowserProvider(window.ethereum);
+                            const accounts = await provider.send('eth_requestAccounts', []);
+                            if (accounts && accounts.length > 0) onWalletConnectUI(accounts[0]);
+                        } catch (err) {
+                            console.error("Polling ethereum fallback error:", err);
+                        }
                     } else if (attempts >= maxAttempts) {
                         clearInterval(interval);
-                        // Fallback
-                        if (window.ethereum) {
-                            try {
-                                const provider = new ethers.BrowserProvider(window.ethereum);
-                                const accounts = await provider.send('eth_requestAccounts', []);
-                                if (accounts && accounts.length > 0) onWalletConnectUI(accounts[0]);
-                            } catch (err) {
-                                alert('Connection failed: ' + err.message);
-                            }
-                        } else {
-                            let msg = 'Connection module not ready or no wallet found.';
-                            if (window.appKitInitError) msg += ' (Error: ' + window.appKitInitError + ')';
-
-                            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                            if (isMobile) {
-                                if (confirm(msg + '\n\nTry opening directly in the MetaMask app browser?')) {
-                                    const dappUrl = window.location.host + window.location.pathname + window.location.search;
-                                    window.location.href = 'metamask://dapp/' + dappUrl;
-                                }
-                            } else {
-                                alert(msg + ' Please ensure you have a wallet extension installed or use a stable connection.');
-                            }
-
-                            if (btnText) btnText.textContent = 'Connect Wallet';
-                        }
+                        let msg = 'The connection module is having trouble loading.';
+                        if (window.appKitInitError) msg = 'System Error: ' + window.appKitInitError;
+                        
+                        msg += '\n\nTry refreshing the page or using a more stable connection.';
+                        alert(msg);
+                        
+                        if (btnText) btnText.textContent = 'Connect Wallet';
                     }
                 }, 500);
             }
-        }
-
-        // Shared callback after wallet is connected (Either via AppKit or Injected)
+        }\n\n        // Shared callback after wallet is connected (Either via AppKit or Injected)
         window.onWalletConnectUI = async function (address) {
             try {
                 playerState.wallet = address;
