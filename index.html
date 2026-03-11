@@ -1921,12 +1921,21 @@
                     alert("Failed to open connection module. Please refresh the page.");
                 }
             } else {
-                // Polling mechanism to wait for the ESM module to initialize (up to 10s)
+                // Fail-Fast: If it's mobile and we already have a module error
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile && window.appKitInitError) {
+                    if (confirm('Connection system failed to load. Open in MetaMask App instead?')) {
+                        const dappUrl = window.location.host + window.location.pathname + window.location.search;
+                        window.location.href = 'metamask://dapp/' + dappUrl;
+                    }
+                    return;
+                }
+
                 const btnText = document.getElementById('connectBtnText');
                 if (btnText) btnText.textContent = 'Preparing...';
 
                 let attempts = 0;
-                const maxAttempts = 20; // 10 seconds total
+                const maxAttempts = 10; // 5 seconds is enough wait
                 const interval = setInterval(async () => {
                     attempts++;
                     if (window.appKitModal) {
@@ -1953,8 +1962,9 @@
 
                             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                             if (isMobile) {
-                                if (confirm(msg + '\n\nTry opening directly in the MetaMask app?')) {
-                                    window.location.href = 'https://metamask.app.link/dapp/' + window.location.host + window.location.pathname;
+                                if (confirm(msg + '\n\nTry opening directly in the MetaMask app browser?')) {
+                                    const dappUrl = window.location.host + window.location.pathname + window.location.search;
+                                    window.location.href = 'metamask://dapp/' + dappUrl;
                                 }
                             } else {
                                 alert(msg + ' Please ensure you have a wallet extension installed or use a stable connection.');
