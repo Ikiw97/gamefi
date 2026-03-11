@@ -46,7 +46,11 @@
                             name: 'Zico Rush',
                             description: 'GameFi Airdrop App',
                             url: window.location.origin,
-                            icons: [window.location.origin + '/assets/icons/icon-192.png']
+                            icons: [window.location.origin + '/assets/icons/icon-192.png'],
+                            redirect: {
+                                native: window.location.origin,
+                                universal: window.location.origin
+                            }
                         },
                         projectId,
                         features: { analytics: true }
