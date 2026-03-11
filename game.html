@@ -22,9 +22,11 @@
     <script type="module">
         import { createAppKit, EthersAdapter } from 'https://esm.run/@reown/appkit/ethers'
         import { mainnet } from 'https://esm.run/@reown/appkit/networks'
+
         const projectId = '20f947d147b6150ebcb5510766f823dd';
         const networks = [mainnet];
         const ethersAdapter = new EthersAdapter();
+
         const modal = createAppKit({
             adapters: [ethersAdapter],
             networks,
@@ -34,9 +36,19 @@
                 url: window.location.origin,
                 icons: [window.location.origin + '/assets/icons/icon-192.png']
             },
-            projectId
+            projectId,
+            features: { analytics: true }
         });
+
         window.appKitModal = modal;
+
+        // Handle account changes
+        modal.subscribeState(async (state) => {
+            const address = modal.getAddress();
+            if (address && window.walletState && !window.walletState.connected) {
+                console.log("[AppKit] Connected:", address);
+            }
+        });
     </script>
     <style>
         body {
