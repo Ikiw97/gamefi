@@ -1621,7 +1621,7 @@
                 navBtn.style.color = '#ef4444';
                 const dot = navBtn.querySelector('.dot');
                 if (dot) { dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 8px #ef4444'; }
-                if (navText) navText.textContent = 'Hubungkan';
+                if (navText) navText.textContent = 'Connect';
             }
         }
 
@@ -1723,7 +1723,7 @@
             const disp = document.getElementById('mainWalletDisplay');
 
             if (btn) btn.style.display = 'flex';
-            if (btnText) btnText.textContent = shortW || 'Dompet Terhubung';
+            if (btnText) btnText.textContent = shortW || 'Wallet Connected';
 
             // Highlight button as connected
             if (btn) btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
@@ -1862,7 +1862,7 @@
         async function connectWallet() {
             // Disconnect if already connected
             if (playerState.connected || playerState.wallet) {
-                if (confirm('Putuskan koneksi dompet?')) {
+                if (confirm('Disconnect wallet?')) {
                     if (window.appKitModal) window.appKitModal.disconnect();
                     localStorage.removeItem('dr_wallet');
                     localStorage.removeItem('dr_username');
@@ -1880,30 +1880,41 @@
                     await window.appKitModal.open();
                 } catch (err) {
                     console.error("AppKit open error:", err);
-                    alert("Gagal membuka modul koneksi. Silakan segarkan halaman.");
+                    alert("Failed to open connection module. Please refresh the page.");
                 }
             } else {
-                // Check if still initializing (it's a module, might be slow)
+                // Polling mechanism to wait for the ESM module to initialize (up to 10s)
                 const btnText = document.getElementById('connectBtnText');
-                if (btnText) btnText.textContent = 'Menyiapkan...';
+                if (btnText) btnText.textContent = 'Preparing...';
 
-                // Wait a bit and try again or fallback
-                setTimeout(async () => {
+                let attempts = 0;
+                const maxAttempts = 20; // 10 seconds total
+                const interval = setInterval(async () => {
+                    attempts++;
                     if (window.appKitModal) {
-                        await window.appKitModal.open();
-                    } else if (window.ethereum) {
+                        clearInterval(interval);
                         try {
-                            const provider = new ethers.BrowserProvider(window.ethereum);
-                            const accounts = await provider.send('eth_requestAccounts', []);
-                            if (accounts && accounts.length > 0) onWalletConnectUI(accounts[0]);
-                        } catch (err) {
-                            alert('Koneksi gagal: ' + err.message);
+                            await window.appKitModal.open();
+                        } catch (e) {
+                            console.error("AppKit delayed open error:", e);
                         }
-                    } else {
-                        alert('Modul koneksi belum siap atau dompet kripto tidak ditemukan. Jika Anda di HP, pastikan koneksi internet stabil atau gunakan browser di dalam aplikasi MetaMask.');
-                        if (btnText) btnText.textContent = 'Hubungkan Dompet';
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        // Fallback
+                        if (window.ethereum) {
+                            try {
+                                const provider = new ethers.BrowserProvider(window.ethereum);
+                                const accounts = await provider.send('eth_requestAccounts', []);
+                                if (accounts && accounts.length > 0) onWalletConnectUI(accounts[0]);
+                            } catch (err) {
+                                alert('Connection failed: ' + err.message);
+                            }
+                        } else {
+                            alert('Connection module not ready or no wallet found. If you are on mobile, use a stable connection or open the site inside the MetaMask app.');
+                            if (btnText) btnText.textContent = 'Connect Wallet';
+                        }
                     }
-                }, 1000);
+                }, 500);
             }
         }
 
@@ -1958,7 +1969,7 @@
             } else {
                 updateNavBadge(null);
                 const btnText = document.getElementById('connectBtnText');
-                if (btnText) btnText.textContent = 'Hubungkan Dompet';
+                if (btnText) btnText.textContent = 'Connect Wallet';
             }
             updateProgressSteps();
             loadGlobalStats();
