@@ -44,9 +44,9 @@
         async function initAppKit() {
             console.log("AppKit esm.sh init start...");
             try {
-                // Using esm.sh which is often more robust for mobile browsers
-                const { createAppKit, EthersAdapter } = await import('https://esm.sh/@reown/appkit/ethers');
-                const { mainnet } = await import('https://esm.sh/@reown/appkit/networks');
+                // Using ?bundle to reduce total requests on mobile
+                const { createAppKit, EthersAdapter } = await import('https://esm.sh/@reown/appkit/ethers?bundle');
+                const { mainnet } = await import('https://esm.sh/@reown/appkit/networks?bundle');
 
                 const projectId = '20f947d147b6150ebcb5510766f823dd';
                 const networks = [mainnet];
@@ -1901,7 +1901,18 @@
                 return;
             }
 
-            // Using AppKit (WalletConnect) for better mobile support
+            // 1. Prioritize already injected provider (MetaMask app browser / Extension)
+            if (window.ethereum) {
+                try {
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const accounts = await provider.send('eth_requestAccounts', []);
+                    if (accounts && accounts.length > 0) return onWalletConnectUI(accounts[0]);
+                } catch (err) {
+                    console.warn("Direct connection attempt failed, falling back to AppKit:", err.message);
+                }
+            }
+
+            // 2. Fallback to AppKit (WalletConnect) for standard mobile browsers
             if (window.appKitModal) {
                 try {
                     await window.appKitModal.open();
