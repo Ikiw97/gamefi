@@ -68,7 +68,11 @@
                             name: 'Zico Rush',
                             description: 'GameFi Airdrop App',
                             url: window.location.origin,
-                            icons: [window.location.origin + '/assets/icons/icon-192.png']
+                            icons: [window.location.origin + '/assets/icons/icon-192.png'],
+                            redirect: {
+                                native: window.location.origin,
+                                universal: window.location.origin
+                            }
                         },
                         projectId,
                         features: { analytics: true }
@@ -1897,7 +1901,7 @@
         }
 
         // ── Connect Wallet ──
-                async function connectWallet() {
+        async function connectWallet() {
             // Disconnect if already connected
             if (playerState.connected || playerState.wallet) {
                 if (confirm('Disconnect wallet?')) {
@@ -1969,15 +1973,15 @@
                         clearInterval(interval);
                         let msg = 'The connection module is having trouble loading.';
                         if (window.appKitInitError) msg = 'System Error: ' + window.appKitInitError;
-                        
+
                         msg += '\n\nTry refreshing the page or using a more stable connection.';
                         alert(msg);
-                        
+
                         if (btnText) btnText.textContent = 'Connect Wallet';
                     }
                 }, 500);
             }
-        }\n\n        // Shared callback after wallet is connected (Either via AppKit or Injected)
+        } \n\n        // Shared callback after wallet is connected (Either via AppKit or Injected)
         window.onWalletConnectUI = async function (address) {
             try {
                 playerState.wallet = address;
