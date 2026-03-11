@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Zico Rush – Play</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#030712" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Zico Rush" />
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪙</text></svg>" />
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- AppKit (WalletConnect) ESM -->
+    <script type="module">
+        import { createAppKit, EthersAdapter } from 'https://esm.run/@reown/appkit/ethers'
+        import { mainnet } from 'https://esm.run/@reown/appkit/networks'
+        const projectId = '20f947d147b6150ebcb5510766f823dd';
+        const networks = [mainnet];
+        const ethersAdapter = new EthersAdapter();
+        const modal = createAppKit({
+            adapters: [ethersAdapter],
+            networks,
+            metadata: {
+                name: 'Zico Rush',
+                description: 'GameFi Airdrop App',
+                url: window.location.origin,
+                icons: [window.location.origin + '/assets/icons/icon-192.png']
+            },
+            projectId
+        });
+        window.appKitModal = modal;
+    </script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #030712;
+            min-height: 100vh;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* ── GAME CANVAS CONTAINER (hidden during menu) ── */
+        #gameContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            display: none;
+        }
+
+        canvas {
+            display: block;
+            margin: auto;
+        }
+
+        /* ── HUD (shown during gameplay) ── */
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1rem;
+            background: linear-gradient(180deg, rgba(9, 9, 11, 0.95) 0%, rgba(24, 24, 27, 0.8) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        #hud.visible {
+            display: flex;
+        }
+
+        #hud .hud-logo {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hud-stats {
+            display: flex;
+            gap: 1.25rem;
+        }
+
+        .hud-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        .hud-stat .label {
+            color: #64748b;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hud-stat .val {
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .hud-stat .val.diamond-val {
+            color: #38bdf8;
+        }
+
+        .hud-stat .val.pts-val {
+            color: #a855f7;
+        }
+
+        .hud-stat .val.life-val {
+            color: #ef4444;
+        }
+
+        .hud-level-name {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 100%;
+            margin-top: 0.5rem;
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.4rem 1.2rem;
+            border-radius: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem;
+            color: #c084fc;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-weight: 700;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+        }
+
+        .hud-btn {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            color: #c084fc;
+            font-size: 0.75rem;
+            padding: 0.3rem 0.75rem;
+            cursor: pointer;
+            font-family: 'Space Grotesk', monospace;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .hud-btn:hover {
+            background: rgba(139, 92, 246, 0.25);
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+        }
+
+        /* ── Mobile controls ── */
+        #mobileControls {
+            position: fixed;
+            bottom: 0.3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: none;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 44px);
+            grid-template-rows: repeat(3, 44px);
+            gap: 4px;
+        }
+
+        .d-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #d8b4fe;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .d-btn:active {
+            background: rgba(168, 85, 247, 0.4);
+            transform: scale(0.92);
+            border-color: rgba(168, 85, 247, 0.6);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+
+        @media (pointer: coarse),
+        (max-width: 768px) {
+            #mobileControls {
+                display: block;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .hide-mobile {
+                display: none !important;
+            }
+
+            .hud-level-name {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.8rem;
+            }
+
+            .hud-stats {
+                gap: 0.75rem;
+            }
+        }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(24, 24, 27, 0.9), rgba(9, 9, 11, 0.95));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            padding: 0.6rem 1.25rem;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', monospace;
+            color: #c084fc;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(139, 92, 246, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* ════════════════════════════════════════════════
+             HTML MENU OVERLAY  
+        ════════════════════════════════════════════════ */
+        #htmlMenu {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .menu-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139, 92, 246, 0.18) 0%, transparent 70%),
+                linear-gradient(135deg, #030712 0%, #0f172a 50%, #030712 100%);
+            z-index: 0;
+        }
+
+        .menu-grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+        }
+
+        /* Floating coin particles */
+        .coin-particle {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: url('assets/sprites/coin.png') center/contain no-repeat;
+            opacity: 0.08;
+            animation: floatCoin var(--dur, 6s) ease-in-out infinite;
+            animation-delay: var(--delay, 0s);
+            z-index: 0;
+        }
+
+        @keyframes floatCoin {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.06;
+            }
+
+            50% {
+                transform: translateY(-24px) rotate(10deg);
+                opacity: 0.14;
+            }
+        }
+
+        .menu-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            margin: 2rem 1rem;
+            background: linear-gradient(160deg,
+                    rgba(24, 24, 27, 0.7) 0%,
+                    rgba(15, 23, 42, 0.85) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 28px;
+            padding: 2.5rem 2rem 2rem;
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            box-shadow:
+                0 24px 60px rgba(0, 0, 0, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                0 0 0 1px rgba(139, 92, 246, 0.05);
+        }
+
+        .menu-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #a855f7, #06b6d4, transparent);
+            border-radius: 0 0 4px 4px;
+        }
+
+        /* Logo */
+        .menu-logo-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .menu-coin-img {
+            width: 80px;
+            height: 80px;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.5)) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+            animation: menuCoinFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes menuCoinFloat {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(-10px) scale(1.04);
+            }
+        }
+
+        .menu-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f8fafc, #a855f7, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.08em;
+            margin-top: 0.75rem;
+        }
+
+        .menu-subtitle {
+            font-size: 0.7rem;
+            color: #64748b;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-top: 0.2rem;
+        }
+
+        /* Player info */
+        .player-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(168, 85, 247, 0.15);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .player-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(6, 182, 212, 0.25));
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .player-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .player-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #c084fc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-wallet {
+            font-size: 0.6rem;
+            color: #475569;
+            font-family: monospace;
+            margin-top: 0.15rem;
+        }
+
+        /* Stats row */
+        .stats-chips {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-chip {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(9, 9, 11, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1rem 0.75rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-chip::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--chip-color, #8b5cf6);
+            opacity: 0.7;
+        }
+
+        .chip-val {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--chip-color, #a855f7);
+        }
+
+        .chip-label {
+            font-size: 0.55rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.2rem;
+        }
+
+        /* Buttons */
+        .menu-btn {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+            text-decoration: none;
+        }
+
+        .menu-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+
+        .menu-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .menu-btn:hover::after {
+            opacity: 1;
+        }
+
+        .menu-btn:active {
+            transform: translateY(0);
+        }
+
+        .menu-btn.primary {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: white;
+            box-shadow: 0 6px 24px rgba(168, 85, 247, 0.45);
+        }
+
+        .menu-btn.primary:hover {
+            box-shadow: 0 10px 35px rgba(168, 85, 247, 0.65);
+        }
+
+        .menu-btn.secondary {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.08));
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            color: #06b6d4;
+            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.15);
+        }
+
+        .menu-btn.secondary:hover {
+            border-color: rgba(6, 182, 212, 0.6);
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.3);
+        }
+
+        .menu-btn.ghost {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #64748b;
+            font-size: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .menu-btn.ghost:hover {
+            color: #94a3b8;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* How to play */
+        .how-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            flex-wrap: wrap;
+        }
+
+        .htp-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.62rem;
+            color: #475569;
+        }
+
+        .htp-key {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            padding: 0.15rem 0.4rem;
+            font-family: monospace;
+            font-size: 0.6rem;
+            color: #94a3b8;
+        }
+
+        /* ════════════════════════════════════════════════
+             HTML RESULT OVERLAY (Level Complete / Game Over)
+        ════════════════════════════════════════════════ */
+        #htmlResult {
+            position: fixed;
+            inset: 0;
+            z-index: 105;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .result-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            margin: 2rem 1rem;
+            background: linear-gradient(160deg,
+                    rgba(24, 24, 27, 0.7) 0%,
+                    rgba(15, 23, 42, 0.85) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 28px;
+            padding: 2.5rem 2rem 2rem;
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+            text-align: center;
+        }
+
+        .result-logo {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.4));
+        }
+
+        #resultLogo.lose {
+            filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.4));
+        }
+
+        .result-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-title.win {
+            color: #22c55e;
+        }
+
+        .result-title.lose {
+            color: #ef4444;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Confetti Canvas */
+        #confettiCanvas {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══════ HTML MENU OVERLAY ═══════ -->
+    <div id="htmlMenu">
+        <div class="menu-bg"></div>
+        <div class="menu-grid-overlay"></div>
+
+        <!-- Floating coin particles -->
+        <div class="coin-particle" style="left:8%; top:20%; --dur:7s; --delay:0s;"></div>
+        <div class="coin-particle" style="left:85%; top:15%; --dur:5s; --delay:1s; width:30px;height:30px;"></div>
+        <div class="coin-particle" style="left:15%; top:70%; --dur:8s; --delay:2s; width:25px;height:25px;"></div>
+        <div class="coin-particle" style="left:75%; top:65%; --dur:6s; --delay:0.5s; width:35px;height:35px;"></div>
+        <div class="coin-particle" style="left:50%; top:85%; --dur:9s; --delay:1.5s;"></div>
+
+        <div class="menu-card">
+            <!-- Logo -->
+            <div class="menu-logo-wrap">
+                <img src="assets/sprites/coin.png" alt="Coin" class="menu-coin-img">
+                <div class="menu-title">ZICO RUSH</div>
+                <div class="menu-subtitle">GameFi Airdrop – Season 1</div>
+            </div>
+
+            <!-- Player info -->
+            <div class="player-card">
+                <div class="player-avatar" id="menuAvatar">👤</div>
+                <div class="player-info">
+                    <div class="player-name" id="menuUsername">Player</div>
+                    <div class="player-wallet" id="menuWallet">Not Connected</div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-chips">
+                <div class="stat-chip" style="--chip-color: #a855f7">
+                    <div class="chip-val" id="menuPoints">0</div>
+                    <div class="chip-label">Total Points</div>
+                </div>
+                <div class="stat-chip" style="--chip-color: #ef4444">
+                    <div class="chip-val" id="menuLives">3</div>
+                    <div class="chip-label">Lives</div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <button class="menu-btn primary" id="btnPlay" onclick="startGame()">
+                <i class="ph-fill ph-lightning"></i>
+                <span id="btnPlayLabel">PLAY LEVEL 1</span>
+            </button>
+
+            <a class="menu-btn secondary" href="leaderboard.html">
+                <i class="ph-fill ph-trophy"></i>
+                LEADERBOARD
+            </a>
+
+            <a class="menu-btn ghost" href="index.html">
+                <i class="ph-fill ph-arrow-left"></i>
+                EXIT TO HOME
+            </a>
+
+            <!-- How to play -->
+            <div class="how-row" style="margin-top:0.75rem;">
+                <div class="htp-item"><span class="htp-key">← →</span> Move</div>
+                <div class="htp-item"><span class="htp-icon"><i class="ph-fill ph-coin"
+                            style="color:#f59e0b;"></i></span> Collect</div>
+                <div class="htp-item"><span class="htp-key">🔑</span> Unlock</div>
+                <div class="htp-item"><span class="htp-icon"><i class="ph-fill ph-lightning"
+                            style="color:#ef4444;"></i></span> Avoid</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ GAME HUD (shown during gameplay) ═══════ -->
+    <div id="hud">
+        <div class="hud-logo"><i class="ph-fill ph-coin" style="color:#f59e0b;"></i> <span class="hide-mobile">COIN
+                RUSH</span></div>
+        <div class="hud-level-name" id="hudLevelName">LEVEL 1 - Depth 1</div>
+        <div class="hud-stats">
+            <div class="hud-stat">
+                <span class="label" style="font-size:1.1rem;color:#38bdf8;"><i class="ph-fill ph-coin"></i></span>
+                <span class="val diamond-val" id="hudDiamonds">0</span>
+            </div>
+            <div class="hud-stat">
+                <span class="label">PTS</span>
+                <span class="val pts-val" id="hudPoints">0</span>
+            </div>
+            <div class="hud-stat">
+                <span class="label" style="font-size:1.1rem;color:#ef4444;"><i class="ph-fill ph-heart"></i></span>
+                <span class="val life-val" id="hudLives">3</span>
+            </div>
+        </div>
+        <button class="hud-btn" onclick="showHTMLMenu()">⏸ Menu</button>
+    </div>
+
+    <!-- Game Canvas -->
+    <div id="gameContainer"></div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <!-- Mobile D-Pad -->
+    <div id="mobileControls">
+        <div class="d-pad">
+            <div></div>
+            <div class="d-btn" id="btnUp"><i class="ph-bold ph-caret-up"></i></div>
+            <div></div>
+            <div class="d-btn" id="btnLeft"><i class="ph-bold ph-caret-left"></i></div>
+            <div></div>
+            <div class="d-btn" id="btnRight"><i class="ph-bold ph-caret-right"></i></div>
+            <div></div>
+            <div class="d-btn" id="btnDown"><i class="ph-bold ph-caret-down"></i></div>
+            <div></div>
+        </div>
+    </div>
+
+    <!-- ═══════ HTML RESULT OVERLAY ═══════ -->
+    <div id="htmlResult">
+        <canvas id="confettiCanvas"></canvas>
+        <div class="menu-bg"></div>
+        <div class="menu-grid-overlay"></div>
+
+        <div class="result-card">
+            <div class="result-logo" id="resultLogo">🏆</div>
+            <div class="result-title win" id="resultTitle">LEVEL 1 COMPLETE!</div>
+
+            <div class="result-grid">
+                <div class="stat-chip" style="--chip-color: #f59e0b">
+                    <div class="chip-val" id="resCoins">0</div>
+                    <div class="chip-label">Coins</div>
+                </div>
+                <div class="stat-chip" style="--chip-color: #22c55e">
+                    <div class="chip-val" id="resPoints">+0</div>
+                    <div class="chip-label">Points Earned</div>
+                </div>
+                <div class="stat-chip" style="--chip-color: #a855f7">
+                    <div class="chip-val" id="resTotalPts">0</div>
+                    <div class="chip-label">Total Points</div>
+                </div>
+                <div class="stat-chip" style="--chip-color: #ef4444">
+                    <div class="chip-val" id="resLives">3</div>
+                    <div class="chip-label">Lives Left</div>
+                </div>
+            </div>
+
+            <!-- Diamonds Progress -->
+            <div style="margin-bottom: 1.5rem; background:rgba(255,255,255,0.03); padding: 1rem; border-radius:12px;">
+                <div
+                    style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem; font-family:'Space Grotesk', sans-serif;">
+                    <span>Diamonds</span>
+                    <span id="resDiamText">0/0</span>
+                </div>
+                <div style="height: 6px; background:#1e293b; border-radius: 3px; overflow:hidden;">
+                    <div id="resDiamBar"
+                        style="height: 100%; width: 50%; background:#38bdf8; transition: width 0.5s ease-out;"></div>
+                </div>
+            </div>
+
+            <button class="menu-btn primary" id="btnNextLevel" onclick="startGame()">
+                <i class="ph-fill ph-lightning"></i> NEXT LEVEL
+            </button>
+            <button class="menu-btn primary" id="btnTryAgain" onclick="startGame()"
+                style="background: linear-gradient(135deg, #ef4444, #b91c1c); display:none;">
+                <i class="ph-bold ph-arrow-counter-clockwise"></i> TRY AGAIN
+            </button>
+
+            <button class="menu-btn ghost" onclick="showHTMLMenu()">
+                <i class="ph-bold ph-house-line"></i> MAIN MENU
+            </button>
+        </div>
+    </div>
+
+    <!-- Phaser 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="js/game/LoadScene.js?v=4"></script>
+    <script src="js/game/MenuScene.js?v=4"></script>
+    <script src="js/game/GameScene.js?v=4"></script>
+    <script src="js/game/ResultScene.js?v=4"></script>
+    <script src="js/game/main.js?v=4"></script>
+
+    <script>
+        /* ─────────────────────────────────────
+            HTML MENU CONTROLLER
+        ───────────────────────────────────── */
+
+        function initMenu() {
+            const username = localStorage.getItem('dr_username') || 'Player';
+            const wallet = localStorage.getItem('dr_wallet') || '';
+            const points = parseInt(localStorage.getItem('dr_points') || '0');
+            const level = Math.max(
+                parseInt(localStorage.getItem('dr_currentLevel') || '1'),
+                parseInt(localStorage.getItem('dr_maxLevel') || '1')
+            );
+            const lives = window.gameState ? window.gameState.lives : 3;
+
+            document.getElementById('menuUsername').textContent = username;
+            document.getElementById('menuWallet').textContent = wallet
+                ? wallet.slice(0, 6) + '...' + wallet.slice(-4)
+                : 'Demo Mode';
+            document.getElementById('menuPoints').textContent = points;
+            document.getElementById('menuLives').textContent = lives;
+            document.getElementById('btnPlayLabel').textContent = `PLAY LEVEL ${level}`;
+
+            // Set avatar emoji
+            const avatarEmojis = ['⚔️', '🛡️', '🗡️', '🏹', '🧙', '🦊', '🐉', '💎', '👑', '🔥', '⭐', '🚀'];
+            const idx = username.split('').reduce((s, c) => s + c.charCodeAt(0), 0) % avatarEmojis.length;
+            document.getElementById('menuAvatar').textContent = avatarEmojis[idx];
+        }
+
+        function showHTMLMenu() {
+            document.getElementById('htmlResult').style.display = 'none';
+            document.getElementById('htmlMenu').style.display = 'flex';
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('hud').classList.remove('visible');
+            document.getElementById('mobileControls').style.display = 'none';
+            initMenu();
+        }
+
+        function startGame() {
+            document.getElementById('htmlResult').style.display = 'none';
+            document.getElementById('htmlMenu').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            document.getElementById('hud').classList.add('visible');
+
+            // Show mobile controls if on mobile/touch device
+            if (window.matchMedia("(pointer: coarse), (max-width: 768px)").matches) {
+                document.getElementById('mobileControls').style.display = 'block';
+            }
+
+            const gs = window.gameState;
+            if (window.game) {
+                // If Phaser already initialized, just start a new game scene
+                const activeScene = window.game.scene.getScenes(true)[0];
+                if (activeScene) {
+                    activeScene.scene.start('GameScene', { targetLevel: gs.currentLevel });
+                } else {
+                    window.game.scene.start('GameScene', { targetLevel: gs.currentLevel });
+                }
+            }
+            if (window.updateHUD) window.updateHUD();
+        }
+
+        // Override MenuScene to show HTML menu instead of drawing on canvas
+        window.showHTMLMenuFromPhaser = showHTMLMenu;
+
+        /* ─────────────────────────────────────
+            HTML RESULT CONTROLLER 
+        ───────────────────────────────────── */
+        window.showHTMLResult = function (data) {
+            document.getElementById('htmlResult').style.display = 'flex';
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('hud').classList.remove('visible');
+            document.getElementById('mobileControls').style.display = 'none';
+
+            const won = data.won;
+            const logo = document.getElementById('resultLogo');
+            const title = document.getElementById('resultTitle');
+
+            if (won) {
+                logo.innerHTML = '🏆';
+                logo.className = 'result-logo win';
+                title.textContent = `LEVEL ${data.level} COMPLETE!`;
+                title.className = 'result-title win';
+                document.getElementById('btnNextLevel').style.display = 'flex';
+                document.getElementById('btnTryAgain').style.display = 'none';
+                fireConfetti();
+            } else {
+                logo.innerHTML = '💀';
+                logo.className = 'result-logo lose';
+                title.textContent = 'GAME OVER';
+                title.className = 'result-title lose';
+                document.getElementById('btnNextLevel').style.display = 'none';
+                document.getElementById('btnTryAgain').style.display = 'flex';
+                clearConfetti();
+            }
+
+            document.getElementById('resCoins').textContent = `${data.diamonds} / ${data.totalDiamonds}`;
+            document.getElementById('resPoints').textContent = `+${data.pointsEarned}`;
+            document.getElementById('resTotalPts').textContent = data.totalPoints;
+            document.getElementById('resLives').textContent = window.gameState.lives;
+
+            const pct = data.totalDiamonds > 0 ? (data.diamonds / data.totalDiamonds) * 100 : 0;
+            document.getElementById('resDiamText').textContent = `${data.diamonds} / ${data.totalDiamonds} Diamonds`;
+
+            // Allow CSS transition to show animation
+            setTimeout(() => {
+                document.getElementById('resDiamBar').style.width = `${pct}%`;
+            }, 100);
+        }
+
+        function clearConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function fireConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const ctx = canvas.getContext('2d');
+
+            const particles = [];
+            const colors = ['#a855f7', '#38bdf8', '#f59e0b', '#22c55e', '#ec4899'];
+
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 10 + 5,
+                    h: Math.random() * 10 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 3 + 2,
+                    angle: Math.random() * 360,
+                    spin: Math.random() * 0.2 - 0.1
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+                particles.forEach(p => {
+                    p.y += p.speed;
+                    p.angle += p.spin;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.angle);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    ctx.restore();
+
+                    if (p.y < canvas.height + 50) active = true;
+                });
+
+                if (active && document.getElementById('htmlResult').style.display !== 'none') {
+                    requestAnimationFrame(animate);
+                }
+            }
+            animate();
+        }
+
+        // Init the menu display on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initMenu();
+        });
+
+        // ── ANTI-CHEAT / ANTI-INSPECT ──
+        // Mencegah klik kanan
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // Mencegah shortcut DevTools
+        document.onkeydown = function (e) {
+            if (e.keyCode == 123) return false; // F12
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 73) return false; // Ctrl+Shift+I
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 74) return false; // Ctrl+Shift+J
+            if (e.ctrlKey && e.keyCode == 85) return false; // Ctrl+U
+        };
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.warn('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
