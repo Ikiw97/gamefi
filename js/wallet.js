@@ -22,7 +22,7 @@ window.addEventListener('unhandledrejection', function (e) {
     document.body.appendChild(div);
 });
 
-window.APP_API_URL = 'http://localhost:3000/api';
+// window.APP_API_URL is no longer needed since we use Supabase directly
 
 window.walletState = {
     connected: false,
@@ -133,13 +133,18 @@ function handleWalletConnected(address, isDemo) {
 
 async function checkReturningPlayer(wallet) {
     try {
-        const res = await fetch(`${window.APP_API_URL}/player/${wallet}`);
-        if (res.ok) {
-            const data = await res.json();
+        const { data, error } = await window.supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('wallet', wallet.toLowerCase())
+            .single();
 
+        if (error) throw error; // will jump to catch block if new player
+
+        if (data) {
             // Save to localStorage
             localStorage.setItem('dr_username', data.username);
-            localStorage.setItem('dr_referralCode', data.referralCode || '');
+            localStorage.setItem('dr_referralCode', data.referral_code || '');
             localStorage.setItem('dr_points', data.points || 0);
             if (data.level) {
                 localStorage.setItem('dr_currentLevel', data.level);
