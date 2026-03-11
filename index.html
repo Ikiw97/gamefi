@@ -26,16 +26,10 @@
         import { createAppKit, EthersAdapter } from 'https://esm.run/@reown/appkit/ethers'
         import { mainnet } from 'https://esm.run/@reown/appkit/networks'
 
-        // 1. Get ProjectId from https://cloud.reown.com
-        const projectId = '20f947d147b6150ebcb5510766f823dd'; // Placeholder ID (User must replace)
-
-        // 2. Set networks
+        const projectId = '20f947d147b6150ebcb5510766f823dd';
         const networks = [mainnet];
-
-        // 3. Create a provider adapter
         const ethersAdapter = new EthersAdapter();
 
-        // 4. Create modal
         const modal = createAppKit({
             adapters: [ethersAdapter],
             networks,
@@ -46,25 +40,22 @@
                 icons: [window.location.origin + '/assets/icons/icon-192.png']
             },
             projectId,
-            features: {
-                analytics: true
-            }
+            features: { analytics: true }
         });
 
-        // Expose to global window
         window.appKitModal = modal;
 
-        // Listen for events
+        // Handle account changes
         modal.subscribeState(async (state) => {
-            if (state.selectedNetworkId && window.walletState) {
-                // If connected, handle the account
-                const address = modal.getAddress();
-                if (address && !window.walletState.connected) {
-                    console.log("[AppKit] Wallet connected:", address);
-                    if (typeof window.onWalletConnectUI === 'function') {
-                        window.onWalletConnectUI(address);
-                    }
+            const address = modal.getAddress();
+            if (address && window.walletState && !window.walletState.connected) {
+                console.log("[AppKit] Connected:", address);
+                if (typeof window.onWalletConnectUI === 'function') {
+                    window.onWalletConnectUI(address);
                 }
+            } else if (!address && window.walletState && window.walletState.connected) {
+                console.log("[AppKit] Disconnected");
+                // Optional: clearWalletData();
             }
         });
     </script>
@@ -1595,10 +1586,12 @@
         // Supabase client is available as window.supabaseClient
 
         // ── State ──
-        const playerState = {
+        window.walletState = {
+            connected: false,
             wallet: null,
             username: localStorage.getItem('dr_username') || null
         };
+        const playerState = window.walletState; // For backward compatibility in this file
 
         // ── Captcha state ──
         let _capA, _capB, _capAns;
@@ -1628,7 +1621,7 @@
                 navBtn.style.color = '#ef4444';
                 const dot = navBtn.querySelector('.dot');
                 if (dot) { dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 8px #ef4444'; }
-                if (navText) navText.textContent = 'Connect';
+                if (navText) navText.textContent = 'Hubungkan';
             }
         }
 
@@ -1729,9 +1722,11 @@
             const btnText = document.getElementById('connectBtnText');
             const disp = document.getElementById('mainWalletDisplay');
 
-            // Keep the button visible and use it to show the address (inside the card)
             if (btn) btn.style.display = 'flex';
-            if (btnText) btnText.textContent = shortW;
+            if (btnText) btnText.textContent = shortW || 'Dompet Terhubung';
+
+            // Highlight button as connected
+            if (btn) btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
 
             // Hide the separate display element to avoid redundancy
             if (disp) disp.style.display = 'none';
@@ -1866,8 +1861,8 @@
         // ── Connect Wallet ──
         async function connectWallet() {
             // Disconnect if already connected
-            if (playerState.wallet) {
-                if (confirm('Disconnect wallet?')) {
+            if (playerState.connected || playerState.wallet) {
+                if (confirm('Putuskan koneksi dompet?')) {
                     if (window.appKitModal) window.appKitModal.disconnect();
                     localStorage.removeItem('dr_wallet');
                     localStorage.removeItem('dr_username');
@@ -1885,19 +1880,30 @@
                     await window.appKitModal.open();
                 } catch (err) {
                     console.error("AppKit open error:", err);
+                    alert("Gagal membuka modul koneksi. Silakan segarkan halaman.");
                 }
             } else {
-                // Fallback to legacy MetaMask injection
-                try {
-                    if (!window.ethereum) throw new Error('No crypto wallet found. Please install MetaMask browser extension or use a mobile wallet app.');
-                    const provider = new ethers.BrowserProvider(window.ethereum);
-                    const accounts = await provider.send('eth_requestAccounts', []);
-                    if (!accounts || accounts.length === 0) throw new Error('No accounts found');
-                    const address = accounts[0];
-                    onWalletConnectUI(address);
-                } catch (err) {
-                    alert('Wallet connection failed: ' + err.message);
-                }
+                // Check if still initializing (it's a module, might be slow)
+                const btnText = document.getElementById('connectBtnText');
+                if (btnText) btnText.textContent = 'Menyiapkan...';
+
+                // Wait a bit and try again or fallback
+                setTimeout(async () => {
+                    if (window.appKitModal) {
+                        await window.appKitModal.open();
+                    } else if (window.ethereum) {
+                        try {
+                            const provider = new ethers.BrowserProvider(window.ethereum);
+                            const accounts = await provider.send('eth_requestAccounts', []);
+                            if (accounts && accounts.length > 0) onWalletConnectUI(accounts[0]);
+                        } catch (err) {
+                            alert('Koneksi gagal: ' + err.message);
+                        }
+                    } else {
+                        alert('Modul koneksi belum siap atau dompet kripto tidak ditemukan. Jika Anda di HP, pastikan koneksi internet stabil atau gunakan browser di dalam aplikasi MetaMask.');
+                        if (btnText) btnText.textContent = 'Hubungkan Dompet';
+                    }
+                }, 1000);
             }
         }
 
@@ -1905,6 +1911,7 @@
         window.onWalletConnectUI = async function (address) {
             try {
                 playerState.wallet = address;
+                playerState.connected = true;
 
                 setConnectBtnConnected(address);
                 updateNavBadge(address);
@@ -1941,14 +1948,17 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // If already logged in from localStorage, show UI state
+            // Restore session from localStorage safely
             const savedWallet = localStorage.getItem('dr_wallet');
             if (savedWallet) {
+                playerState.wallet = savedWallet;
+                playerState.connected = true; // Mark as connected for UI
                 setConnectBtnConnected(savedWallet);
                 updateNavBadge(savedWallet);
-                playerState.wallet = savedWallet;
             } else {
                 updateNavBadge(null);
+                const btnText = document.getElementById('connectBtnText');
+                if (btnText) btnText.textContent = 'Hubungkan Dompet';
             }
             updateProgressSteps();
             loadGlobalStats();
