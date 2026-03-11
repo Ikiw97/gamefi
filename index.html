@@ -1981,7 +1981,9 @@
                     }
                 }, 500);
             }
-        } \n\n        // Shared callback after wallet is connected (Either via AppKit or Injected)
+        }
+
+        // Shared callback after wallet is connected (Either via AppKit or Injected)
         window.onWalletConnectUI = async function (address) {
             try {
                 playerState.wallet = address;
