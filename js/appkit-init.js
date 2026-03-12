@@ -80,11 +80,23 @@ async function initAppKit() {
         console.log("[AppKit] Successfully initialized!");
 
         // Subscribe to connection state changes
-        if (modal.subscribeState) {
+        if (modal.subscribeAccount) {
+            modal.subscribeAccount(account => {
+                console.log("[AppKit] Account changed:", JSON.stringify(account));
+                // Only fire if we have an active address
+                if (account.isConnected && account.address) {
+                    if (window._onAppKitConnect) {
+                        window._onAppKitConnect(account.address);
+                        // We do NOT null it out here in case it fires multiple times before verify completes
+                    }
+                }
+            });
+        } else if (modal.subscribeState) {
+            // Fallback for older interface
             modal.subscribeState(state => {
                 console.log("[AppKit] State changed:", JSON.stringify(state));
-                if (state.open === false && modal.getIsConnected && modal.getIsConnected()) {
-                    // Modal closed and user is connected
+                const isConn = modal.getIsConnectedState ? modal.getIsConnectedState() : (modal.getIsConnected ? modal.getIsConnected() : false);
+                if (state.open === false && isConn) {
                     const addr = modal.getAddress ? modal.getAddress() : null;
                     if (addr && window._onAppKitConnect) {
                         window._onAppKitConnect(addr);
