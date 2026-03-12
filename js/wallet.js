@@ -188,7 +188,6 @@ async function checkReturningPlayer(wallet) {
             localStorage.setItem('dr_points', data.points || 0);
             const playerLevel = Math.max(
                 data.level || 1,
-                data.max_level || 1,
                 parseInt(localStorage.getItem('dr_currentLevel') || '1'),
                 parseInt(localStorage.getItem('dr_maxLevel') || '1')
             );
