@@ -87,39 +87,79 @@ window.submitScore = async function (points, level, diamonds) {
             return;
         }
 
-        // Memanggil Supabase Edge Function untuk submit score
-        // Ini lebih aman karena validasi poin bisa dilakukan di server sebelum masuk database.
-        const { data, error } = await window.supabaseClient.functions.invoke('submit-score', {
-            body: { 
-                wallet: playerSession.wallet,
-                points: points,
-                level: level,
-                diamonds: diamonds,
-                // signature: "secret-hash-here" // (Opsional) bisa ditambahkan nanti untuk keamanan ekstra
-            }
-        });
+        // Try Edge Function first, fallback to direct DB update
+        let saved = false;
 
-        if (error) {
-            console.error('Edge Function Error:', error);
-            throw error;
+        try {
+            const { data, error } = await window.supabaseClient.functions.invoke('submit-score', {
+                body: { 
+                    wallet: playerSession.wallet,
+                    points: points,
+                    level: level,
+                    diamonds: diamonds,
+                }
+            });
+
+            if (error) throw error;
+
+            if (data && data.success) {
+                localStorage.setItem('dr_points', data.totalPoints);
+                maxLvl = Math.max(maxLvl, data.level);
+                localStorage.setItem('dr_maxLevel', maxLvl);
+                localStorage.setItem('dr_currentLevel', maxLvl);
+                window.gameState.totalPoints = data.totalPoints;
+                window.gameState.currentLevel = maxLvl;
+                window.showToast(`Score saved! +${points} pts`, '#22c55e', 3000);
+                saved = true;
+            }
+        } catch (edgeFnErr) {
+            console.warn('Edge function failed, trying direct DB update:', edgeFnErr.message);
         }
 
-        if (data && data.success) {
-            // Update local storage dengan data yang divalidasi server
-            localStorage.setItem('dr_points', data.totalPoints);
-            
-            // maxLvl checked against server
-            maxLvl = Math.max(maxLvl, data.level);
-            localStorage.setItem('dr_maxLevel', maxLvl);
-            localStorage.setItem('dr_currentLevel', maxLvl); // Sync next level for session
+        // FALLBACK: Direct Supabase update if edge function failed
+        if (!saved) {
+            try {
+                const walletLower = playerSession.wallet.toLowerCase();
+                
+                // Get current profile data
+                const { data: profile } = await window.supabaseClient
+                    .from('profiles')
+                    .select('points, diamonds_collected, max_level, level')
+                    .eq('wallet', walletLower)
+                    .single();
 
-            // Update global state
-            window.gameState.totalPoints = data.totalPoints;
-            window.gameState.currentLevel = maxLvl;
-            
-            window.showToast(`Score saved! +${points} pts`, '#22c55e', 3000);
-        } else {
-            console.warn('Score submission rejected by server:', data);
+                if (profile) {
+                    const newTotalPoints = (profile.points || 0) + points;
+                    const newTotalDiamonds = (profile.diamonds_collected || 0) + diamonds;
+                    const newMaxLevel = Math.max(profile.max_level || 1, profile.level || 1, level);
+
+                    const { error: updateErr } = await window.supabaseClient
+                        .from('profiles')
+                        .update({
+                            points: newTotalPoints,
+                            diamonds_collected: newTotalDiamonds,
+                            max_level: newMaxLevel,
+                            level: newMaxLevel
+                        })
+                        .eq('wallet', walletLower);
+
+                    if (updateErr) throw updateErr;
+
+                    // Sync local state
+                    localStorage.setItem('dr_points', newTotalPoints);
+                    maxLvl = Math.max(maxLvl, newMaxLevel);
+                    localStorage.setItem('dr_maxLevel', maxLvl);
+                    localStorage.setItem('dr_currentLevel', maxLvl);
+                    window.gameState.totalPoints = newTotalPoints;
+                    window.gameState.currentLevel = maxLvl;
+
+                    window.showToast(`Score saved! +${points} pts`, '#22c55e', 3000);
+                    saved = true;
+                }
+            } catch (directErr) {
+                console.error('Direct DB update also failed:', directErr.message);
+                window.showToast('⚠️ Could not save score', '#ef4444', 3000);
+            }
         }
 
     } catch (e) {
