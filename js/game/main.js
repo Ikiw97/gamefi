@@ -81,6 +81,12 @@ window.submitScore = async function (points, level, diamonds) {
 
         if (!playerSession.wallet || playerSession.wallet === 'guest') return;
 
+        if (!window.supabaseClient) {
+            console.error('Supabase client not loaded! Score will not be saved to database.');
+            window.showToast('⚠️ Score not saved (offline mode)', '#f59e0b', 3000);
+            return;
+        }
+
         // Memanggil Supabase Edge Function untuk submit score
         // Ini lebih aman karena validasi poin bisa dilakukan di server sebelum masuk database.
         const { data, error } = await window.supabaseClient.functions.invoke('submit-score', {
