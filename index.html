@@ -1939,11 +1939,12 @@
                 const btnText = document.getElementById('connectBtnText');
                 if (btnText) btnText.textContent = 'Preparing...';
 
-                // Fail-Fast: If we already know there is a module error
                 if (window.appKitInitError) {
                     let msg = 'Connection system failed to load.\n\nError: ' + window.appKitInitError;
-                    msg += '\n\nTroubleshoot:\n1. Check your internet connection.\n2. In mobile browser, ensure you are NOT in "Private/Incognito" mode.\n3. Or open this page directly inside MetaMask browser if external connection fails.';
-                    alert(msg);
+                    msg += '\n\nWould you like to open this app securely inside the MetaMask browser?';
+                    if (confirm(msg)) {
+                        window.location.href = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
+                    }
                     if (btnText) btnText.textContent = 'Connect Wallet';
                     return;
                 }
@@ -1971,11 +1972,13 @@
                         }
                     } else if (attempts >= maxAttempts) {
                         clearInterval(interval);
-                        let msg = 'The connection module is having trouble loading.';
-                        if (window.appKitInitError) msg = 'System Error: ' + window.appKitInitError;
+                        let msg = 'The connection module is having trouble loading.\n';
+                        if (window.appKitInitError) msg += '\nSystem Error: ' + window.appKitInitError;
 
-                        msg += '\n\nTry refreshing the page or using a more stable connection.';
-                        alert(msg);
+                        msg += '\n\nWould you like to open this app securely inside the MetaMask browser?';
+                        if (confirm(msg)) {
+                            window.location.href = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
+                        }
 
                         if (btnText) btnText.textContent = 'Connect Wallet';
                     }
