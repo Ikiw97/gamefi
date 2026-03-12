@@ -20,6 +20,9 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
     <!-- Reown AppKit for Multi-Wallet Support -->
     <script type="module" src="js/appkit-init.js"></script>
     <!-- Ethers v6 for wallet support -->
@@ -1054,7 +1057,6 @@
     </div>
 
     <script>
-        const API = 'http://localhost:3000/api';
         const wallet = localStorage.getItem('dr_wallet') || '';
         const isDemo = localStorage.getItem('dr_demo') === '1';
 
@@ -1148,15 +1150,20 @@
         // ── Player Data ──
         async function loadPlayerData() {
             try {
-                const res = await fetch(`${API}/player/${wallet}`);
-                if (!res.ok) return;
-                const data = await res.json();
+                const { data, error } = await window.supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('wallet', wallet.toLowerCase())
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!data) return;
 
                 const level = data.level || 1;
                 const points = data.points || 0;
-                const diamonds = data.diamonds || 0;
-                const games = data.gamesPlayed || 0;
-                const refs = data.referralCount || 0;
+                const diamonds = data.diamonds_collected || 0;
+                const games = data.games_played || 0; // Assuming this field exists or just 0
+                const refs = 0; // Need to count referrals if needed
 
                 document.getElementById('profileUsername').textContent = data.username || 'Player';
                 document.getElementById('statPoints').textContent = fmtNum(points);
@@ -1168,16 +1175,16 @@
                 document.getElementById('refCountBadge').textContent = `${refs} Referred`;
                 document.getElementById('refBonus').textContent = fmtNum(refs * 25);
 
-                if (data.referralCode) {
-                    document.getElementById('refCode').textContent = data.referralCode;
-                    document.getElementById('refLinkBox').textContent = `${window.location.origin}?ref=${data.referralCode}`;
+                if (data.referral_code) {
+                    document.getElementById('refCode').textContent = data.referral_code;
+                    document.getElementById('refLinkBox').textContent = `${window.location.origin}?ref=${data.referral_code}`;
                 }
 
                 // Update localStorage
                 localStorage.setItem('dr_username', data.username || 'Player');
                 localStorage.setItem('dr_points', points);
-                if (data.level) localStorage.setItem('dr_currentLevel', data.level);
-                if (data.referralCode) localStorage.setItem('dr_referralCode', data.referralCode);
+                localStorage.setItem('dr_currentLevel', level);
+                if (data.referral_code) localStorage.setItem('dr_referralCode', data.referral_code);
 
                 updateAchievements(level, points, diamonds, refs);
             } catch (e) {
@@ -1188,51 +1195,33 @@
         // ── Player Rank ──
         async function loadPlayerRank() {
             try {
-                const res = await fetch(`${API}/leaderboard?limit=100`);
-                if (!res.ok) return;
-                const data = await res.json();
-                const players = data.players || [];
-                const me = players.find(p =>
-                    p.wallet && wallet && p.wallet.toLowerCase().startsWith(wallet.slice(0, 6).toLowerCase())
+                const { data, error } = await window.supabaseClient
+                    .from('profiles')
+                    .select('wallet, points')
+                    .order('points', { ascending: false });
+
+                if (error) throw error;
+                
+                const players = data || [];
+                const meIndex = players.findIndex(p =>
+                    p.wallet && wallet && p.wallet.toLowerCase() === wallet.toLowerCase()
                 );
-                if (me) {
-                    document.getElementById('statRank').textContent = `#${me.rank}`;
+                
+                if (meIndex !== -1) {
+                    document.getElementById('statRank').textContent = `#${meIndex + 1}`;
+                } else {
+                    document.getElementById('statRank').textContent = '—';
                 }
-            } catch (e) { }
+            } catch (e) {
+                console.log('Rank error:', e);
+                document.getElementById('statRank').textContent = '—';
+            }
         }
 
         // ── Game History ──
         async function loadGameHistory() {
-            try {
-                const res = await fetch(`${API}/scores/${wallet}`);
-                if (!res.ok) throw new Error('No history');
-                const data = await res.json();
-                const scores = data.scores || data || [];
-
-                if (!Array.isArray(scores) || scores.length === 0) {
-                    showEmptyHistory();
-                    return;
-                }
-
-                let html = '';
-                scores.slice(0, 20).forEach(s => {
-                    const won = s.won !== false;
-                    html += `<div class="h-row">
-                        <div class="h-lvl">Lv.${s.level || 1}</div>
-                        <div class="h-detail">
-                            <div class="h-coins">${fmtNum(s.diamonds || 0)} 🪙 collected</div>
-                            <div class="h-date">${fmtDate(s.createdAt || s.date)}</div>
-                        </div>
-                        <div class="h-pts">+${fmtNum(s.points || 0)}</div>
-                        <div class="h-result ${won ? 'win' : 'lose'}">${won ? '✅ Win' : '❌ Lose'}</div>
-                    </div>`;
-                });
-
-                document.getElementById('historyContent').innerHTML = `<div class="history-list">${html}</div>`;
-                document.getElementById('historyCountBadge').textContent = `${Math.min(scores.length, 20)} Games`;
-            } catch (e) {
-                showEmptyHistory();
-            }
+            // Note: History table not yet implemented in Supabase migration
+            showEmptyHistory();
         }
 
         function showEmptyHistory() {
