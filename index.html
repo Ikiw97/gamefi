@@ -39,9 +39,9 @@
         };
     </script>
 
-    <!-- WalletConnect dependencies -->
-    <script src="https://unpkg.com/@walletconnect/universal-provider@2.14.0/dist/index.umd.js"></script>
-    <script src="js/wc-init.js"></script>
+    <!-- WalletConnect dependencies (REMOVED) & MetaMask SDK Added -->
+    <script src="https://c0f4f41c-2f55-4863-921b-sdk-docs.github.io/cdn/metamask-sdk.js"></script>
+    <script src="js/mm-init.js"></script>
     <!-- Ethers v6 for wallet support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
     <!-- Pixel Font (VT323) and Space Grotesk -->
@@ -1848,7 +1848,7 @@
             // Disconnect if already connected
             if (playerState.connected || playerState.wallet) {
                 if (confirm('Disconnect wallet?')) {
-                    if (window.wcProvider && window.wcProvider.session) window.wcProvider.disconnect();
+                    if (window.mmsdk) window.mmsdk.disconnect();
                     localStorage.removeItem('dr_wallet');
                     localStorage.removeItem('dr_username');
                     localStorage.removeItem('dr_referralCode');
@@ -1859,66 +1859,61 @@
                 return;
             }
 
-            // 1. Prioritize already injected provider (MetaMask app browser / Extension)
-            if (window.ethereum) {
-                try {
-                    const provider = new ethers.BrowserProvider(window.ethereum);
-                    const accounts = await provider.send('eth_requestAccounts', []);
-                    if (accounts && accounts.length > 0) return onWalletConnectUI(accounts[0]);
-                } catch (err) {
-                    console.warn("Direct connection attempt failed, falling back to WalletConnect:", err.message);
-                }
-            }
-
-            // 2. Fallback to WalletConnect v2 for standard mobile browsers
             const btnText = document.getElementById('connectBtnText');
             if (btnText) btnText.textContent = 'Connecting...';
 
-            if (window.appKitInitError) {
-                let msg = 'Connection system failed to load.\n\nError: ' + window.appKitInitError;
-                msg += '\n\nPlease check your internet connection and try refreshing the page.';
-                alert(msg);
-                if (btnText) btnText.textContent = 'Connect Wallet';
-                return;
-            }
-
             try {
-                if (!window.wcProvider) {
-                    throw new Error("WalletConnect Provider not initialized.");
+                // Determine Provider
+                let providerDetails = null;
+
+                // 1. Injected Provider First (MetaMask app browser, Extension, OKX, Trust etc.)
+                if (window.ethereum) {
+                    providerDetails = window.ethereum;
+                    console.log("Using injected window.ethereum");
+                }
+                // 2. Fallback to MetaMask SDK for Mobile Chrome/Safari
+                else if (window.mmsdk) {
+                    await window.mmsdk.connect();
+                    providerDetails = window.mmProvider;
+                    console.log("Using MetaMask SDK Provider");
+                }
+                else {
+                    throw new Error("No wallet provider found. Please install MetaMask!");
                 }
 
-                // Connect universal provider which opens MetaMask directly via the "display_uri" event listener in head
-                const session = await window.wcProvider.connect({
-                    namespaces: {
-                        eip155: {
-                            methods: [
-                                "eth_sendTransaction",
-                                "eth_signTransaction",
-                                "eth_sign",
-                                "personal_sign",
-                                "eth_signTypedData",
-                            ],
-                            chains: ["eip155:1"],
-                            events: ["chainChanged", "accountsChanged"],
-                            rpcMap: {
-                                1: "https://cloudflare-eth.com"
-                            }
-                        }
-                    }
-                });
+                if (!providerDetails) throw new Error("Could not initialize wallet provider.");
 
-                if (session) {
-                    // Extract the address using Ethers wrapped provider
-                    const eip155Provider = new ethers.BrowserProvider(window.wcProvider);
-                    const signer = await eip155Provider.getSigner();
-                    const address = await signer.getAddress();
-                    if (address) {
-                        onWalletConnectUI(address);
+                // Create Ethers v6 Provider wrapper
+                const provider = new ethers.BrowserProvider(providerDetails);
+
+                // Request Accounts
+                const accounts = await provider.send('eth_requestAccounts', []);
+
+                if (accounts && accounts.length > 0) {
+                    const address = accounts[0];
+                    console.log('Got address:', address);
+
+                    // Sign a message to verify ownership
+                    const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
+
+                    try {
+                        const signer = await provider.getSigner();
+                        const signature = await signer.signMessage(message);
+                        console.log('Wallet signed successfully:', signature);
+                    } catch (signErr) {
+                        console.warn('Sign message rejected or failed:', signErr);
+                        throw new Error('Signature request was rejected. Connection canceled.');
                     }
+
+                    // Success! Proceed to UI
+                    onWalletConnectUI(address);
+                } else {
+                    throw new Error("No accounts found.");
                 }
+
             } catch (err) {
-                console.error("WalletConnect connect error:", err);
-                if (err.message && !err.message.includes("User closed")) {
+                console.error("Wallet connect error:", err);
+                if (err.message && !err.message.includes("User closed") && !err.message.includes("User rejected")) {
                     alert("Failed to connect: " + err.message);
                 }
             } finally {
