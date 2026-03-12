@@ -2003,12 +2003,19 @@
         }
 
         // ── Verify wallet via signature (works with any EIP-1193 provider) ──
+        let _isVerifying = false;
         async function verifyWithProvider(provider, address) {
+            if (_isVerifying) {
+                logDebug("Already verifying, skipping duplicate call");
+                return;
+            }
+            
             logDebug("Verifying wallet: " + address);
             const btnText = document.getElementById('connectBtnText');
             const btn = document.getElementById('mainConnectBtn');
 
             if (btnText) btnText.textContent = 'Verifying...';
+            _isVerifying = true;
 
             try {
                 const message = `Zico Rush GameFi\nVerify: ${address}\nTime: ${Date.now()}`;
@@ -2035,6 +2042,7 @@
                     onWalletConnectUI(address);
                 }
             } finally {
+                _isVerifying = false;
                 if (btn) btn.disabled = false;
             }
         }
