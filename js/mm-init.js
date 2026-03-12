@@ -20,7 +20,8 @@ function initMMSDK() {
             },
             storage: {
                 enabled: true,
-            }
+            },
+            preferredChainId: '0x2105' // 8453 (Base)
         });
 
         window.mmsdk = MMSDK;
