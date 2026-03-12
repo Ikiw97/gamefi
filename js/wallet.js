@@ -117,14 +117,26 @@ async function connectWallet() {
     try {
         let providerDetails = null;
         logDebug("Detecting provider...");
-        if (typeof window.ethereum !== 'undefined') {
-            logDebug("Injected provider found");
+
+        const isMetaMaskBrowser = window.ethereum && window.ethereum.isMetaMask && !window.ethereum.isMetaMaskSDK;
+
+        if (isMetaMaskBrowser) {
+            logDebug("Native MetaMask browser detected.");
             providerDetails = window.ethereum;
         } else if (window.mmsdk) {
-            logDebug("MetaMask SDK found, connecting...");
-            await window.mmsdk.connect();
-            providerDetails = window.mmProvider;
-            logDebug("SDK Provider ready");
+            logDebug("SDK detected. Calling mmsdk.connect()...");
+            try {
+                await window.mmsdk.connect();
+                providerDetails = window.mmProvider || window.ethereum;
+                logDebug("SDK connect() Success");
+            } catch (e) {
+                logDebug("SDK connect() Error: " + e.message);
+            }
+        }
+
+        if (!providerDetails && window.ethereum) {
+            logDebug("Fallback to window.ethereum");
+            providerDetails = window.ethereum;
         }
 
         if (providerDetails) {
