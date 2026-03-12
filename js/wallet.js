@@ -117,22 +117,23 @@ async function connectWallet() {
                 const chainOk = await ensureBaseChain(providerDetails);
                 if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
 
+                // MANDATORY DELAY for MetaMask Mobile to sync UI
+                console.log("Waiting for MetaMask to sync...");
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
                 // Sign a message to verify ownership
                 const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
 
+                // Convert message to hex for better personal_sign compatibility
+                const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
+                    .map(b => b.toString(16).padStart(2, '0')).join('');
+
                 try {
-                    let signature;
-                    if (providerDetails === window.ethereum) {
-                        signature = await window.ethereum.request({
-                            method: 'personal_sign',
-                            params: [message, address]
-                        });
-                    } else {
-                        signature = await providerDetails.request({
-                            method: 'personal_sign',
-                            params: [message, address]
-                        });
-                    }
+                    console.log("Requesting signature...");
+                    const signature = await providerDetails.request({
+                        method: 'personal_sign',
+                        params: [hexMsg, address]
+                    });
                     console.log('Wallet signed successfully:', signature);
                 } catch (signErr) {
                     console.warn('Sign message rejected or failed:', signErr);
