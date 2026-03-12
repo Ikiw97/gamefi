@@ -63,6 +63,8 @@ class LoadScene extends Phaser.Scene {
         this.load.image('gob3', 'assets/sprites/gob3.png');
         this.load.image('gob4', 'assets/sprites/gob4.png');
         this.load.image('gob5', 'assets/sprites/gob5.png');
+        this.load.image('door_locked', 'assets/sprites/door1.png');
+        this.load.image('door_open', 'assets/sprites/door2.png');
 
         // ── Generate remaining sprites via canvas ──
         this.generateSprites();
@@ -130,37 +132,7 @@ class LoadScene extends Phaser.Scene {
             ctx.fillRect(s / 2 + 2, s / 2 + 9, 3, 3);
         });
 
-        // DOOR (locked)
-        gen('door_locked', (ctx, s) => {
-            ctx.fillStyle = '#78350f';
-            ctx.fillRect(2, 2, s - 4, s - 4);
-            ctx.strokeStyle = '#92400e';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(2, 2, s - 4, s - 4);
-            // Lock icon
-            ctx.fillStyle = '#fbbf24';
-            ctx.beginPath();
-            ctx.arc(s / 2, s / 2 - 2, 6, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#78350f';
-            ctx.beginPath();
-            ctx.arc(s / 2, s / 2 - 2, 3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#fbbf24';
-            ctx.fillRect(s / 2 - 4, s / 2 + 2, 8, 6);
-        });
 
-        // DOOR (open)
-        gen('door_open', (ctx, s) => {
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(2, 2, s - 4, s - 4);
-            ctx.fillStyle = '#16a34a';
-            ctx.fillRect(6, 6, s - 12, s - 12);
-            ctx.fillStyle = '#4ade80';
-            ctx.font = 'bold 16px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('✓', s / 2, s / 2 + 6);
-        });
 
     }
 
