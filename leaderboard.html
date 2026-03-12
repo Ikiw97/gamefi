@@ -22,27 +22,46 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <!-- WalletConnect dependencies -->
-    <script src="https://unpkg.com/@walletconnect/universal-provider@2.13.1/dist/index.umd.js" defer></script>
+    <script src="https://unpkg.com/@walletconnect/universal-provider@2.13.1/dist/index.umd.js"></script>
     <script>
         window.wcProvider = null;
         window.wcProjectId = '20f947d147b6150ebcb5510766f823dd';
 
         async function initWalletConnect() {
             try {
-                // Wait for UniversalProvider to be available (loaded by defer script)
+                console.log("Starting WalletConnect initialization...");
+
+                // Retry loop untuk menunggu library load
+                let retries = 0;
+                while (!window.UniversalProvider && retries < 20) {
+                    console.warn("Waiting for UniversalProvider...");
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    retries++;
+                }
+
                 if (!window.UniversalProvider) {
-                    console.warn("UniversalProvider not loaded yet, retrying...");
-                    setTimeout(initWalletConnect, 100);
-                    return;
+                    throw new Error("UniversalProvider library failed to load");
                 }
 
-                // Access the correct export path
-                const UniversalProvider = window.UniversalProvider.default || window.UniversalProvider;
-                if (!UniversalProvider || !UniversalProvider.init) {
-                    console.warn("UniversalProvider.init not available");
-                    return;
+                console.log("UniversalProvider loaded, checking methods...");
+
+                // Try different access patterns
+                let UniversalProvider = null;
+                if (window.UniversalProvider.default) {
+                    UniversalProvider = window.UniversalProvider.default;
+                } else if (window.UniversalProvider.UniversalProvider) {
+                    UniversalProvider = window.UniversalProvider.UniversalProvider;
+                } else {
+                    UniversalProvider = window.UniversalProvider;
                 }
 
+                if (!UniversalProvider || typeof UniversalProvider.init !== 'function') {
+                    console.error("Available methods:", Object.keys(UniversalProvider || {}));
+                    throw new Error("UniversalProvider.init is not a function");
+                }
+
+                // Initialize Universal Provider
+                console.log("Initializing with projectId:", window.wcProjectId);
                 window.wcProvider = await UniversalProvider.init({
                     projectId: window.wcProjectId,
                     metadata: {
@@ -52,20 +71,20 @@
                         icons: [window.location.origin + '/assets/icons/icon-192.png']
                     }
                 });
+
+                console.log("✅ WalletConnect Initialized Successfully");
+
                 window.wcProvider.on("display_uri", (uri) => {
+                    console.log("Display URI event received");
                     window.location.href = `metamask://wc?uri=${encodeURIComponent(uri)}`;
                 });
             } catch (err) {
-                console.warn("WalletConnect init error:", err);
+                console.error("❌ WalletConnect init error:", err);
             }
         }
 
-        // Initialize when DOM is ready and libraries are loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initWalletConnect);
-        } else {
-            setTimeout(initWalletConnect, 500);
-        }
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initWalletConnect);
     </script>
     <style>
         .lb-container {
