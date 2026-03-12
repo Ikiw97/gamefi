@@ -1824,62 +1824,29 @@
             msgEl.className = 'reg-msg';
 
             try {
-                // Generate a simple referral code for this user
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                let refCode = username.slice(0, 3).toUpperCase();
-                for (let i = refCode.length; i < 6; i++) {
-                    refCode += chars[Math.floor(Math.random() * chars.length)];
-                }
-
-                // Insert into Supabase
-                const { data, error } = await supabaseClient
-                    .from('profiles')
-                    .insert([
-                        {
-                            wallet: wallet.toLowerCase(),
-                            username: username,
-                            referral_code: refCode,
-                            referred_by: referral ? referral.toUpperCase() : null,
-                            points: referral ? 25 : 0 // give 25 bonus pts if they use a code
-                        }
-                    ])
-                    .select()
-                    .single();
-
-                if (error) {
-                    if (error.code === '23505') throw new Error('Username or wallet already registered');
-                    throw error;
-                }
-
-                if (referral) {
-                    // Find referrer by code
-                    const { data: referrerData } = await window.supabaseClient
-                        .from('profiles')
-                        .select('wallet, points, referral_count')
-                        .eq('referral_code', referral.toUpperCase())
-                        .single();
-
-                    if (referrerData) {
-                        // Reward referrer: +50 points, +1 referral count
-                        await window.supabaseClient
-                            .from('profiles')
-                            .update({
-                                points: (referrerData.points || 0) + 50,
-                                referral_count: (referrerData.referral_count || 0) + 1
-                            })
-                            .eq('wallet', referrerData.wallet);
+                // Use server-side Edge Function for registration (prevents referral manipulation)
+                const { data, error } = await window.supabaseClient.functions.invoke('register-player', {
+                    body: {
+                        wallet: wallet.toLowerCase(),
+                        username: username,
+                        referral_code_input: referral || null,
                     }
+                });
+
+                if (error) throw error;
+
+                if (!data || !data.success) {
+                    throw new Error(data?.error || 'Registration failed');
                 }
 
-                // Save player data
-                localStorage.setItem('dr_wallet', wallet.toLowerCase());
-                localStorage.setItem('dr_username', data.username);
-                localStorage.setItem('dr_referralCode', data.referral_code || '');
-                localStorage.setItem('dr_points', data.points || 0);
-                const dbLevel = data.level || 1;
-                const localLevel = parseInt(localStorage.getItem('dr_currentLevel') || '1');
-                const localMaxLevel = parseInt(localStorage.getItem('dr_maxLevel') || '1');
-                const bestLevel = Math.max(dbLevel, localLevel, localMaxLevel);
+                const profile = data.profile;
+
+                // Save player data locally
+                localStorage.setItem('dr_wallet', profile.wallet);
+                localStorage.setItem('dr_username', profile.username);
+                localStorage.setItem('dr_referralCode', profile.referral_code || '');
+                localStorage.setItem('dr_points', profile.points || 0);
+                const bestLevel = Math.max(profile.level || 1, 1);
                 localStorage.setItem('dr_currentLevel', bestLevel);
                 localStorage.setItem('dr_maxLevel', bestLevel);
 
