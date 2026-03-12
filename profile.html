@@ -709,6 +709,192 @@
             font-weight: 600;
         }
 
+        /* ───── SOCIAL TASKS ───── */
+        .social-tasks-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.5), rgba(9, 9, 11, 0.7));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .task-item:hover {
+            border-color: rgba(168, 85, 247, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .task-item.completed {
+            border-color: rgba(34, 197, 94, 0.25);
+            background: linear-gradient(145deg, rgba(34, 197, 94, 0.05), rgba(9, 9, 11, 0.7));
+        }
+
+        .task-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            background: var(--task-bg, rgba(29, 161, 242, 0.12));
+            border: 1px solid var(--task-border, rgba(29, 161, 242, 0.25));
+        }
+
+        .task-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-name {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.15rem;
+        }
+
+        .task-desc {
+            font-size: 0.58rem;
+            color: #64748b;
+        }
+
+        .task-points {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.68rem;
+            font-weight: 900;
+            color: #f59e0b;
+            padding: 0.25rem 0.6rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 999px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-task {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            letter-spacing: 0.04em;
+        }
+
+        .btn-task.action {
+            background: linear-gradient(135deg, #1d9bf0, #1a8cd8);
+            color: white;
+            box-shadow: 0 4px 15px rgba(29, 155, 240, 0.3);
+        }
+
+        .btn-task.action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(29, 155, 240, 0.5);
+        }
+
+        .btn-task.claim {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            animation: claimPulse 2s ease-in-out infinite;
+        }
+
+        .btn-task.claim:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+        }
+
+        @keyframes claimPulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+            50% { box-shadow: 0 4px 25px rgba(245, 158, 11, 0.6); }
+        }
+
+        .btn-task.done {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .btn-task.loading {
+            background: rgba(148, 163, 184, 0.1);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+            cursor: wait;
+            pointer-events: none;
+        }
+
+        .social-progress {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .social-progress-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .social-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #06b6d4);
+            border-radius: 999px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .social-progress-text {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.58rem;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .task-item {
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                padding: 0.85rem 1rem;
+            }
+            .task-info {
+                flex: 1;
+                min-width: 120px;
+            }
+            .task-points {
+                order: 3;
+            }
+            .btn-task {
+                order: 4;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
         /* ───── DISCONNECT ───── */
         .disconnect-row {
             display: flex;
@@ -871,6 +1057,7 @@
     <!-- ═══════ NAVBAR ═══════ -->
     <nav class="navbar">
         <a href="index.html" class="nav-brand">
+            <span class="brand-icon">💎</span>
             <span class="brand-text">ZICO RUSH</span>
         </a>
 
@@ -1033,6 +1220,62 @@
                     </div>
                 </div>
 
+                <!-- Social Tasks -->
+                <div class="glass-card social-tasks-section">
+                    <div class="card-header">
+                        <div class="card-title">🐦 Social Tasks</div>
+                        <span class="card-badge" id="socialTasksBadge">0/4 Done</span>
+                    </div>
+                    <div class="task-list" id="socialTaskList">
+                        <!-- Connect Twitter -->
+                        <div class="task-item" id="task-twitter_connect" data-task="twitter_connect" data-points="50">
+                            <div class="task-icon" style="--task-bg: rgba(29,161,242,0.12); --task-border: rgba(29,161,242,0.25)">🐦</div>
+                            <div class="task-info">
+                                <div class="task-name">Connect Twitter</div>
+                                <div class="task-desc">Follow us on Twitter to stay updated</div>
+                            </div>
+                            <div class="task-points">+50 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_connect')">Connect</button>
+                        </div>
+                        <!-- Follow -->
+                        <div class="task-item" id="task-twitter_follow" data-task="twitter_follow" data-points="30">
+                            <div class="task-icon" style="--task-bg: rgba(168,85,247,0.12); --task-border: rgba(168,85,247,0.25)">👥</div>
+                            <div class="task-info">
+                                <div class="task-name">Follow @ZicoRushGame</div>
+                                <div class="task-desc">Follow our official Twitter account</div>
+                            </div>
+                            <div class="task-points">+30 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_follow')">Follow</button>
+                        </div>
+                        <!-- Retweet -->
+                        <div class="task-item" id="task-twitter_retweet" data-task="twitter_retweet" data-points="20">
+                            <div class="task-icon" style="--task-bg: rgba(34,197,94,0.12); --task-border: rgba(34,197,94,0.25)">🔁</div>
+                            <div class="task-info">
+                                <div class="task-name">Retweet Pinned Tweet</div>
+                                <div class="task-desc">Retweet our pinned announcement</div>
+                            </div>
+                            <div class="task-points">+20 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_retweet')">Retweet</button>
+                        </div>
+                        <!-- Like -->
+                        <div class="task-item" id="task-twitter_like" data-task="twitter_like" data-points="20">
+                            <div class="task-icon" style="--task-bg: rgba(239,68,68,0.12); --task-border: rgba(239,68,68,0.25)">❤️</div>
+                            <div class="task-info">
+                                <div class="task-name">Like Tweet</div>
+                                <div class="task-desc">Like our pinned tweet</div>
+                            </div>
+                            <div class="task-points">+20 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_like')">Like</button>
+                        </div>
+                    </div>
+                    <div class="social-progress">
+                        <div class="social-progress-bar">
+                            <div class="social-progress-fill" id="socialProgressFill" style="width: 0%"></div>
+                        </div>
+                        <span class="social-progress-text" id="socialProgressText">0/4 tasks completed</span>
+                    </div>
+                </div>
+
                 <!-- Game History -->
                 <div class="glass-card">
                     <div class="card-header">
@@ -1144,6 +1387,7 @@
             loadPlayerData();
             loadPlayerRank();
             loadGameHistory();
+            loadSocialTasks();
         });
 
         // ── Player Data ──
@@ -1259,6 +1503,191 @@
             el.classList.toggle('locked', !unlocked);
         }
 
+        // ── Social Tasks Config ──
+        const SOCIAL_TASK_CONFIG = {
+            twitter_connect: {
+                url: 'https://twitter.com/ZicoRushGame',
+                points: 50
+            },
+            twitter_follow: {
+                url: 'https://twitter.com/intent/follow?screen_name=ZicoRushGame',
+                points: 30
+            },
+            twitter_retweet: {
+                url: 'https://twitter.com/intent/retweet?tweet_id=TWEET_ID_HERE',
+                points: 20
+            },
+            twitter_like: {
+                url: 'https://twitter.com/intent/like?tweet_id=TWEET_ID_HERE',
+                points: 20
+            }
+        };
+
+        // Track which tasks have been "actioned" (opened link) but not yet claimed
+        const socialTaskActioned = {};
+        // Track which tasks are completed (from DB)
+        const socialTaskCompleted = {};
+
+        // ── Load Social Tasks ──
+        async function loadSocialTasks() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('social_tasks')
+                    .select('task_type, points_awarded, completed_at')
+                    .eq('wallet', wallet.toLowerCase());
+
+                if (error) {
+                    console.log('Social tasks table may not exist yet:', error.message);
+                    return;
+                }
+
+                let completedCount = 0;
+                (data || []).forEach(task => {
+                    socialTaskCompleted[task.task_type] = true;
+                    completedCount++;
+                    const el = document.getElementById(`task-${task.task_type}`);
+                    if (el) {
+                        el.classList.add('completed');
+                        const btn = el.querySelector('.btn-task');
+                        if (btn) {
+                            btn.className = 'btn-task done';
+                            btn.textContent = 'Completed ✓';
+                            btn.onclick = null;
+                        }
+                    }
+                });
+
+                updateSocialProgress(completedCount);
+            } catch (e) {
+                console.log('Could not load social tasks:', e);
+            }
+        }
+
+        function updateSocialProgress(count) {
+            const total = 4;
+            const pct = Math.round((count / total) * 100);
+            document.getElementById('socialProgressFill').style.width = pct + '%';
+            document.getElementById('socialProgressText').textContent = `${count}/${total} tasks completed`;
+            document.getElementById('socialTasksBadge').textContent = `${count}/${total} Done`;
+        }
+
+        // ── Do Social Task (open link) ──
+        function doSocialTask(taskType) {
+            if (socialTaskCompleted[taskType]) return;
+
+            const config = SOCIAL_TASK_CONFIG[taskType];
+            if (!config) return;
+
+            // Open Twitter link in new tab
+            window.open(config.url, '_blank');
+
+            // After opening, change button to "Claim"
+            socialTaskActioned[taskType] = true;
+            const el = document.getElementById(`task-${taskType}`);
+            if (el) {
+                const btn = el.querySelector('.btn-task');
+                if (btn) {
+                    btn.className = 'btn-task claim';
+                    btn.textContent = '🎁 Claim';
+                    btn.onclick = () => claimSocialTask(taskType);
+                }
+            }
+        }
+
+        // ── Claim Social Task ──
+        async function claimSocialTask(taskType) {
+            if (socialTaskCompleted[taskType]) return;
+
+            const el = document.getElementById(`task-${taskType}`);
+            const btn = el ? el.querySelector('.btn-task') : null;
+
+            // Show loading
+            if (btn) {
+                btn.className = 'btn-task loading';
+                btn.textContent = 'Claiming...';
+            }
+
+            try {
+                const resp = await fetch(
+                    `${SUPABASE_URL}/functions/v1/complete-social-task`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        },
+                        body: JSON.stringify({
+                            wallet: wallet.toLowerCase(),
+                            task_type: taskType
+                        })
+                    }
+                );
+
+                const result = await resp.json();
+
+                if (!resp.ok) {
+                    throw new Error(result.error || 'Failed to claim');
+                }
+
+                // Mark as completed
+                socialTaskCompleted[taskType] = true;
+                if (el) {
+                    el.classList.add('completed');
+                    if (btn) {
+                        btn.className = 'btn-task done';
+                        btn.textContent = 'Completed ✓';
+                        btn.onclick = null;
+                    }
+                }
+
+                // Update points display
+                if (result.new_points !== undefined) {
+                    document.getElementById('statPoints').textContent = fmtNum(result.new_points);
+                    localStorage.setItem('dr_points', result.new_points);
+                }
+
+                // Update progress
+                const completedCount = Object.keys(socialTaskCompleted).length;
+                updateSocialProgress(completedCount);
+
+                // Show quick toast
+                showTaskToast(`+${SOCIAL_TASK_CONFIG[taskType].points} Points earned! 🎉`);
+
+            } catch (e) {
+                console.error('Claim social task error:', e);
+                // Revert button to claim state
+                if (btn) {
+                    btn.className = 'btn-task claim';
+                    btn.textContent = '🎁 Claim';
+                    btn.onclick = () => claimSocialTask(taskType);
+                }
+                showTaskToast('Failed to claim. Try again.', true);
+            }
+        }
+
+        // ── Toast notification ──
+        function showTaskToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+                padding: 0.75rem 1.5rem; border-radius: 12px; z-index: 999;
+                font-family: 'Space Grotesk', monospace; font-size: 0.75rem; font-weight: 700;
+                backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+                animation: toastSlide 0.3s ease-out;
+                ${isError
+                    ? 'background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444;'
+                    : 'background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #22c55e;'
+                }
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
         // ── Copy actions ──
         function copyRefCode() {
             const code = document.getElementById('refCode').textContent;
@@ -1307,4 +1736,3 @@
 </body>
 
 </html>
-
