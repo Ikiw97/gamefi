@@ -30,6 +30,44 @@ window.walletState = {
     provider: null
 };
 
+// ── Chain Management ──
+async function ensureBaseChain(providerDetails) {
+    const BASE_CHAIN_ID = '0x2105'; // 8453
+    try {
+        const currentChainId = await providerDetails.request({ method: 'eth_chainId' });
+        if (currentChainId !== BASE_CHAIN_ID) {
+            console.log("Switching to Base chain...");
+            try {
+                await providerDetails.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: BASE_CHAIN_ID }],
+                });
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    await providerDetails.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: BASE_CHAIN_ID,
+                            chainName: 'Base',
+                            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                            rpcUrls: ['https://mainnet.base.org'],
+                            blockExplorerUrls: ['https://basescan.org']
+                        }],
+                    });
+                } else {
+                    throw switchError;
+                }
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        return true;
+    } catch (err) {
+        console.error("Chain management error:", err);
+        return false;
+    }
+}
+
+
 async function connectWallet() {
     const btn = document.getElementById('btnConnectWallet');
     const alertEl = document.getElementById('alertWallet');
@@ -61,6 +99,10 @@ async function connectWallet() {
         }
 
         if (providerDetails) {
+            // Enforce Base Chain
+            const chainOk = await ensureBaseChain(providerDetails);
+            if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
+
             try {
                 // Request accounts
                 let accounts;
