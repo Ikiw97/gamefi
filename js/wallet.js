@@ -1,6 +1,12 @@
-// =============================================
 // wallet.js – MetaMask Wallet Connection
 // =============================================
+
+window.addEventListener('load', () => {
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        console.warn("MetaMask Mobile requires HTTPS for many features.");
+        // alert("Warning: MetaMask Mobile features may not work reliably on HTTP. Please use HTTPS.");
+    }
+});
 
 // Global Error Logger for debugging
 window.addEventListener('error', function (e) {
@@ -22,7 +28,29 @@ window.addEventListener('unhandledrejection', function (e) {
     document.body.appendChild(div);
 });
 
-// Shared state for 2-step verification
+// ── Mobile Debug Console ──
+function logDebug(msg) {
+    console.log("[DEBUG]", msg);
+    let consoleEl = document.getElementById('debug-console');
+    if (!consoleEl) {
+        consoleEl = document.createElement('div');
+        consoleEl.id = 'debug-console';
+        consoleEl.style.cssText = 'position:fixed; bottom:0; left:0; width:100%; height:120px; background:rgba(0,0,0,0.85); color:#0f0; font-family:monospace; font-size:10px; overflow-y:auto; z-index:10000; padding:10px; border-top:1px solid #0f0; display:block; pointer-events:none;';
+        consoleEl.innerHTML = '<div style="font-weight:bold; border-bottom:1px solid #0f0; margin-bottom:5px;">DEBUG CONSOLE (GLOBAL)</div>';
+        document.body.appendChild(consoleEl);
+    }
+    const entry = document.createElement('div');
+    entry.style.borderBottom = '1px solid #333';
+    entry.style.padding = '4px 0';
+    entry.style.fontSize = '10px';
+    entry.textContent = `> ${new Date().toLocaleTimeString()}: ${msg}`;
+    consoleEl.prepend(entry);
+    while (consoleEl.children.length > 20) {
+        consoleEl.removeChild(consoleEl.lastChild);
+    }
+}
+
+// Global state for 2-step verification
 let tempProviderDetails = null;
 let tempAddress = null;
 
@@ -38,7 +66,7 @@ async function ensureBaseChain(providerDetails) {
     try {
         const currentChainId = await providerDetails.request({ method: 'eth_chainId' });
         if (currentChainId !== BASE_CHAIN_ID) {
-            console.log("Switching to Base chain...");
+            logDebug("Switching to Base chain...");
             try {
                 await providerDetails.request({
                     method: 'wallet_switchEthereumChain',
@@ -64,13 +92,14 @@ async function ensureBaseChain(providerDetails) {
         }
         return true;
     } catch (err) {
-        console.error("Chain management error:", err);
+        logDebug("Chain mgmt error: " + err.message);
         return false;
     }
 }
 
 // ── Step 1: Connect Wallet ──
 async function connectWallet() {
+    logDebug("connectWallet() triggered");
     const btn = document.getElementById('btnConnectWallet');
     const alertEl = document.getElementById('alertWallet');
 
@@ -87,21 +116,29 @@ async function connectWallet() {
 
     try {
         let providerDetails = null;
+        logDebug("Detecting provider...");
         if (typeof window.ethereum !== 'undefined') {
+            logDebug("Injected provider found");
             providerDetails = window.ethereum;
         } else if (window.mmsdk) {
+            logDebug("MetaMask SDK found, connecting...");
             await window.mmsdk.connect();
             providerDetails = window.mmProvider;
+            logDebug("SDK Provider ready");
         }
 
         if (providerDetails) {
             try {
+                logDebug("Requesting accounts...");
                 const accounts = await providerDetails.request({ method: 'eth_requestAccounts' });
                 if (!accounts || accounts.length === 0) throw new Error('No accounts found');
 
                 const address = accounts[0];
+                logDebug("Account: " + address);
+
                 const chainOk = await ensureBaseChain(providerDetails);
                 if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
+                logDebug("Chain Check Passed");
 
                 // Store for Step 2
                 tempProviderDetails = providerDetails;
@@ -111,6 +148,7 @@ async function connectWallet() {
                 hideLoading();
                 if (btn) {
                     btn.disabled = false;
+                    logDebug("Updating button to VERIFY");
                     const btnTextNode = document.getElementById('walletBtnText');
                     if (btnTextNode) btnTextNode.textContent = 'VERIFY WALLET';
                     btn.onclick = verifyWallet;
@@ -118,7 +156,7 @@ async function connectWallet() {
                 showAlert(alertEl, 'info', 'Step 1 Complete! Click VERIFY WALLET to sign.');
                 return;
             } catch (err) {
-                console.error('Connection error:', err);
+                logDebug("Connection Error: " + err.message);
                 showAlert(alertEl, 'error', `❌ ${err.message}`);
                 if (btn) btn.disabled = false;
                 hideLoading();
@@ -126,13 +164,13 @@ async function connectWallet() {
             }
         }
 
-        // Demo Mode Fallback
-        console.warn('No wallet detected - demo mode');
+        logDebug("No wallet provider, falling back to demo");
         const mockAddress = '0x' + Array.from({ length: 40 }, () =>
             Math.floor(Math.random() * 16).toString(16)).join('');
         handleWalletConnected(mockAddress, true);
         hideLoading();
     } catch (e) {
+        logDebug("Fatal Connect Error: " + e.message);
         hideLoading();
         if (btn) btn.disabled = false;
     }
@@ -140,10 +178,12 @@ async function connectWallet() {
 
 // ── Step 2: Verify Wallet (Signature) ──
 async function verifyWallet() {
+    logDebug("verifyWallet() triggered");
     const btn = document.getElementById('btnConnectWallet');
     const alertEl = document.getElementById('alertWallet');
 
     if (!tempProviderDetails || !tempAddress) {
+        logDebug("Missing session data for verification");
         if (btn) {
             const btnTextNode = document.getElementById('walletBtnText');
             if (btnTextNode) btnTextNode.textContent = 'CONNECT WALLET';
@@ -157,20 +197,22 @@ async function verifyWallet() {
 
     try {
         const address = tempAddress;
-        const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
+        logDebug("Preparing signature for: " + address);
+        const message = `Zico Rush GameFi\nVerify: ${address}\nTime: ${Date.now()}`;
         const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
             .map(b => b.toString(16).padStart(2, '0')).join('');
 
+        logDebug("Requesting personal_sign...");
         const signature = await tempProviderDetails.request({
             method: 'personal_sign',
             params: [hexMsg, address]
         });
 
-        console.log('Verified!');
+        logDebug("Signature successful!");
         handleWalletConnected(address, false);
         showAlert(alertEl, 'success', '✅ Verified!');
     } catch (err) {
-        console.error('Verification error:', err);
+        logDebug("Signature Error: " + err.message);
         showAlert(alertEl, 'error', `❌ ${err.message}`);
         if (btn) {
             btn.disabled = false;
