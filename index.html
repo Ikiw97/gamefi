@@ -39,9 +39,8 @@
         };
     </script>
 
-    <!-- WalletConnect dependencies (REMOVED) & MetaMask SDK Added -->
-    <script src="https://c0f4f41c-2f55-4863-921b-sdk-docs.github.io/cdn/metamask-sdk.js"></script>
-    <script src="js/mm-init.js"></script>
+    <!-- Reown AppKit for Multi-Wallet Support (MetaMask, OKX, Bitget, etc.) -->
+    <script type="module" src="js/appkit-init.js"></script>
     <!-- Ethers v6 for wallet support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
     <!-- Pixel Font (VT323) and Space Grotesk -->
@@ -1864,158 +1863,96 @@
         let tempProviderDetails = null;
         let tempAddress = null;
 
-        window.getProvider = async function () {
-            logDebug("Checking providers...");
-
-            // If we are INSIDE the MetaMask browser, window.ethereum is real and works without SDK
-            const isMetaMaskBrowser = window.ethereum && window.ethereum.isMetaMask && !window.ethereum.isMetaMaskSDK;
-
-            if (isMetaMaskBrowser) {
-                logDebug("Native MetaMask browser detected.");
-                return window.ethereum;
-            }
-
-            // Otherwise, prioritize SDK for deep-linking
-            if (window.mmsdk) {
-                logDebug("SDK available. Calling mmsdk.connect()...");
-                try {
-                    // This explicitly triggers the deep-link to MetaMask app
-                    await window.mmsdk.connect();
-                    logDebug("SDK connect() finished.");
-                    return window.mmProvider || window.ethereum;
-                } catch (e) {
-                    logDebug("SDK connect() failed: " + e.message);
-                }
-            }
-
-            if (window.ethereum) {
-                logDebug("Detected window.ethereum (fallback)");
-                return window.ethereum;
-            }
-
-            return null;
-        };
-
-        // ── Chain Management ──
-        async function ensureBaseChain(providerDetails) {
-            const BASE_CHAIN_ID = '0x2105'; // 8453
-            try {
-                const currentChainId = await providerDetails.request({ method: 'eth_chainId' });
-                if (currentChainId !== BASE_CHAIN_ID) {
-                    console.log("Switching to Base chain...");
-                    try {
-                        await providerDetails.request({
-                            method: 'wallet_switchEthereumChain',
-                            params: [{ chainId: BASE_CHAIN_ID }],
-                        });
-                    } catch (switchError) {
-                        if (switchError.code === 4902) {
-                            await providerDetails.request({
-                                method: 'wallet_addEthereumChain',
-                                params: [{
-                                    chainId: BASE_CHAIN_ID,
-                                    chainName: 'Base',
-                                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                                    rpcUrls: ['https://mainnet.base.org'],
-                                    blockExplorerUrls: ['https://basescan.org']
-                                }],
-                            });
-                        } else {
-                            throw switchError;
-                        }
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                return true;
-            } catch (err) {
-                console.error("Chain management error:", err);
-                return false;
-            }
-        }
-
-        // ── Step 1: Connect Wallet ──
+        // ── Step 1: Connect Wallet (AppKit) ──
         async function connectWallet() {
-            logDebug("Step 1: connectWallet called");
-            // Check if already connected via state
-            if (playerState.connected || playerState.wallet) {
-                if (confirm('Disconnect wallet?')) {
+            logDebug("connectWallet() triggered (AppKit)");
+            const btnText = document.getElementById('connectBtnText');
+
+            if (!window.appKitModal) {
+                logDebug("AppKit Modal not initialized!");
+                alert("Wallet system starting... Please try again.");
+                return;
+            }
+
+            // Already connected
+            if (window.appKitModal.getIsConnected()) {
+                if (confirm("Disconnect wallet?")) {
                     onWalletDisconnectUI();
                 }
                 return;
             }
 
-            const btnText = document.getElementById('connectBtnText');
-            if (btnText) btnText.textContent = 'Connecting...';
-
             try {
-                const providerDetails = await window.getProvider();
-                if (!providerDetails) {
-                    logDebug("No provider found");
-                    throw new Error("No wallet provider found. Please install MetaMask!");
-                }
+                logDebug("Opening AppKit Modal...");
+                await window.appKitModal.open();
 
-                logDebug("Requesting accounts...");
-                const accounts = await providerDetails.request({ method: 'eth_requestAccounts' });
-                if (!accounts || accounts.length === 0) {
-                    logDebug("User rejected or no accounts");
-                    throw new Error("No accounts found.");
-                }
+                if (btnText) btnText.textContent = 'Awaiting...';
 
-                const address = accounts[0];
-                logDebug("Got address: " + address);
+                const checkConnection = setInterval(() => {
+                    if (window.appKitModal.getIsConnected()) {
+                        clearInterval(checkConnection);
+                        const address = window.appKitModal.getAddress();
+                        logDebug("Connected: " + address);
 
-                const chainOk = await ensureBaseChain(providerDetails);
-                if (!chainOk) {
-                    logDebug("Chain switch failed/rejected");
-                    throw new Error("Please switch to Base Chain to continue.");
-                }
+                        if (btnText) btnText.textContent = 'Verify Wallet';
+                        const btn = document.getElementById('btnConnectWallet');
+                        if (btn) btn.onclick = verifyWallet;
+                    }
+                }, 1000);
 
-                tempProviderDetails = providerDetails;
-                tempAddress = address;
+                setTimeout(() => clearInterval(checkConnection), 60000);
 
-                logDebug("Step 1 Success. Changing button to Verify.");
-                if (btnText) btnText.textContent = 'Verify Wallet';
-                const btn = document.getElementById('btnConnectWallet');
-                if (btn) btn.onclick = verifyWallet;
-
-            } catch (err) {
-                logDebug("Error in Step 1: " + err.message);
-                alert("Failed to connect: " + err.message);
+            } catch (e) {
+                logDebug("Connect Error: " + e.message);
                 if (btnText) btnText.textContent = 'Connect Wallet';
             }
         }
 
-        // ── Step 2: Verify Wallet ──
+        // ── Step 2: Verify Wallet (Signature) ──
         async function verifyWallet() {
-            logDebug("Step 2: verifyWallet called");
-            if (!tempProviderDetails || !tempAddress) {
-                logDebug("Missing provider/address for signature");
+            logDebug("verifyWallet() triggered");
+            const btnText = document.getElementById('connectBtnText');
+
+            if (!window.appKitModal || !window.appKitModal.getIsConnected()) {
+                logDebug("Missing session for signature");
                 const btn = document.getElementById('btnConnectWallet');
                 if (btn) btn.onclick = connectWallet;
                 return;
             }
 
-            const btnText = document.getElementById('connectBtnText');
             if (btnText) btnText.textContent = 'Verifying...';
 
             try {
-                const message = `Zico Rush GameFi\nVerify: ${tempAddress}\nTime: ${Date.now()}`;
+                const address = window.appKitModal.getAddress();
+                const provider = window.appKitModal.getWalletProvider();
+                if (!provider) throw new Error("No wallet provider found");
+
+                logDebug("Preparing signature for: " + address);
+                const message = `Zico Rush GameFi\nVerify: ${address}\nTime: ${Date.now()}`;
                 const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
                     .map(b => b.toString(16).padStart(2, '0')).join('');
 
-                logDebug("Requesting personal_sign...");
-                const signature = await tempProviderDetails.request({
+                logDebug("Requesting signature...");
+                const signature = await provider.request({
                     method: 'personal_sign',
-                    params: [hexMsg, tempAddress]
+                    params: [hexMsg, address]
                 });
 
-                logDebug("Signature Success: " + signature.slice(0, 10) + "...");
-                onWalletConnectUI(tempAddress);
+                logDebug("Signature Success!");
+                onWalletConnectUI(address);
             } catch (err) {
                 logDebug("Signature Error: " + err.message);
                 alert("Signature failed: " + err.message);
                 if (btnText) btnText.textContent = 'Verify Wallet';
             }
+        }
+
+        // onWalletDisconnectUI helper
+        window.onWalletDisconnectUI = function () {
+            localStorage.removeItem('dr_wallet');
+            localStorage.removeItem('dr_demo');
+            if (window.appKitModal) window.appKitModal.disconnect();
+            location.reload();
         }
 
         // Shared callback after wallet is connected (Either via AppKit or Injected)
