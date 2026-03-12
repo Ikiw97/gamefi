@@ -124,21 +124,20 @@ window.submitScore = async function (points, level, diamonds) {
                 // Get current profile data
                 const { data: profile } = await window.supabaseClient
                     .from('profiles')
-                    .select('points, diamonds_collected, max_level, level')
+                    .select('points, diamonds_collected, level')
                     .eq('wallet', walletLower)
                     .single();
 
                 if (profile) {
                     const newTotalPoints = (profile.points || 0) + points;
                     const newTotalDiamonds = (profile.diamonds_collected || 0) + diamonds;
-                    const newMaxLevel = Math.max(profile.max_level || 1, profile.level || 1, level);
+                    const newMaxLevel = Math.max(profile.level || 1, level);
 
                     const { error: updateErr } = await window.supabaseClient
                         .from('profiles')
                         .update({
                             points: newTotalPoints,
                             diamonds_collected: newTotalDiamonds,
-                            max_level: newMaxLevel,
                             level: newMaxLevel
                         })
                         .eq('wallet', walletLower);
