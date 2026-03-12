@@ -21,9 +21,14 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- WalletConnect v2 (Universal Provider UMD for Mobile Stability) -->
+    <!-- WalletConnect dependencies -->
+    <script src="https://unpkg.com/@web3modal/standalone@2.4.3/dist/index.umd.js"></script>
     <script src="https://unpkg.com/@walletconnect/universal-provider@2.10.4/dist/index.umd.js"></script>
     <script>
+        // Defensive shims for UniversalProvider UMD bugs
+        if (!window.Web3Modal) {
+            window.Web3Modal = { Web3Modal: class { constructor() { } openModal() { } closeModal() { } } };
+        }
         window.wcProvider = null;
         async function initWalletConnect() {
             try {
