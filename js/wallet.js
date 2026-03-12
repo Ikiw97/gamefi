@@ -79,9 +79,19 @@ async function connectWallet() {
         }
 
         // Fallback to WalletConnect for mobile or if injected provider not available
-        if (window.wcProvider) {
+        // Wait for wcProvider to be ready if it's still initializing
+        let wcReady = window.wcProvider;
+        let waitCount = 0;
+        while (!wcReady && waitCount < 10) {
+            console.warn('Waiting for WalletConnect to initialize...');
+            await new Promise(resolve => setTimeout(resolve, 200));
+            wcReady = window.wcProvider;
+            waitCount++;
+        }
+
+        if (wcReady) {
             console.log('Attempting WalletConnect...');
-            const session = await window.wcProvider.connect({
+            const session = await wcReady.connect({
                 namespaces: {
                     eip155: {
                         methods: [
@@ -106,6 +116,8 @@ async function connectWallet() {
                     return;
                 }
             }
+        } else {
+            console.warn('WalletConnect provider not initialized');
         }
 
         // If no wallet provider is available, show demo mode
