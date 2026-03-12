@@ -96,6 +96,11 @@ window.submitScore = async function (points, level, diamonds) {
             // Update local storage dengan data yang divalidasi server
             localStorage.setItem('dr_points', data.totalPoints);
             localStorage.setItem('dr_maxLevel', data.level);
+            localStorage.setItem('dr_currentLevel', data.level); // Sync next level for session
+
+            // Update global state
+            window.gameState.totalPoints = data.totalPoints;
+            window.gameState.currentLevel = data.level;
             
             window.showToast(`Score saved! +${points} pts`, '#22c55e', 3000);
         } else {
