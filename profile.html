@@ -1114,7 +1114,7 @@
 
             // Load from localStorage first (instant)
             const username = localStorage.getItem('dr_username') || 'Player';
-            const level = parseInt(localStorage.getItem('dr_currentLevel') || '1');
+            const level = Math.max(parseInt(localStorage.getItem('dr_currentLevel') || '1'), parseInt(localStorage.getItem('dr_maxLevel') || '1'));
             const points = parseInt(localStorage.getItem('dr_points') || '0');
             const refCode = localStorage.getItem('dr_referralCode') || '';
 
@@ -1159,7 +1159,7 @@
                 if (error) throw error;
                 if (!data) return;
 
-                const level = data.level || 1;
+                const level = Math.max(data.level || 1, data.max_level || 1);
                 const points = data.points || 0;
                 const diamonds = data.diamonds_collected || 0;
                 const games = data.games_played || 0; // Assuming this field exists or just 0
@@ -1184,6 +1184,7 @@
                 localStorage.setItem('dr_username', data.username || 'Player');
                 localStorage.setItem('dr_points', points);
                 localStorage.setItem('dr_currentLevel', level);
+                localStorage.setItem('dr_maxLevel', level);
                 if (data.referral_code) localStorage.setItem('dr_referralCode', data.referral_code);
 
                 updateAchievements(level, points, diamonds, refs);
