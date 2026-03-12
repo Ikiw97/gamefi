@@ -186,7 +186,12 @@ async function checkReturningPlayer(wallet) {
             localStorage.setItem('dr_username', data.username);
             localStorage.setItem('dr_referralCode', data.referral_code || '');
             localStorage.setItem('dr_points', data.points || 0);
-            const playerLevel = Math.max(data.level || 1, data.max_level || 1);
+            const playerLevel = Math.max(
+                data.level || 1,
+                data.max_level || 1,
+                parseInt(localStorage.getItem('dr_currentLevel') || '1'),
+                parseInt(localStorage.getItem('dr_maxLevel') || '1')
+            );
             localStorage.setItem('dr_currentLevel', playerLevel);
             localStorage.setItem('dr_maxLevel', playerLevel);
 
