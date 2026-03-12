@@ -1876,7 +1876,12 @@
                 localStorage.setItem('dr_username', data.username);
                 localStorage.setItem('dr_referralCode', data.referral_code || '');
                 localStorage.setItem('dr_points', data.points || 0);
-                localStorage.setItem('dr_currentLevel', data.level || 1);
+                const dbLevel = Math.max(data.level || 1, data.max_level || 1);
+                const localLevel = parseInt(localStorage.getItem('dr_currentLevel') || '1');
+                const localMaxLevel = parseInt(localStorage.getItem('dr_maxLevel') || '1');
+                const bestLevel = Math.max(dbLevel, localLevel, localMaxLevel);
+                localStorage.setItem('dr_currentLevel', bestLevel);
+                localStorage.setItem('dr_maxLevel', bestLevel);
 
                 msgEl.textContent = '✅ Account created! Redirecting to game...';
                 msgEl.className = 'reg-msg ok';
@@ -2079,7 +2084,12 @@
                     localStorage.setItem('dr_username', data.username);
                     localStorage.setItem('dr_referralCode', data.referral_code || '');
                     localStorage.setItem('dr_points', data.points || 0);
-                    localStorage.setItem('dr_currentLevel', data.level || 1);
+                    const dbLevel2 = Math.max(data.level || 1, data.max_level || 1);
+                    const localLevel2 = parseInt(localStorage.getItem('dr_currentLevel') || '1');
+                    const localMaxLevel2 = parseInt(localStorage.getItem('dr_maxLevel') || '1');
+                    const bestLevel2 = Math.max(dbLevel2, localLevel2, localMaxLevel2);
+                    localStorage.setItem('dr_currentLevel', bestLevel2);
+                    localStorage.setItem('dr_maxLevel', bestLevel2);
                     isReturning = true;
                 }
 
