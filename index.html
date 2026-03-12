@@ -1866,16 +1866,33 @@
 
         window.getProvider = async function () {
             logDebug("Checking providers...");
-            if (window.ethereum) {
-                logDebug("Detected window.ethereum");
+
+            // If we are INSIDE the MetaMask browser, window.ethereum is real and works without SDK
+            const isMetaMaskBrowser = window.ethereum && window.ethereum.isMetaMask && !window.ethereum.isMetaMaskSDK;
+
+            if (isMetaMaskBrowser) {
+                logDebug("Native MetaMask browser detected.");
                 return window.ethereum;
             }
+
+            // Otherwise, prioritize SDK for deep-linking
             if (window.mmsdk) {
-                logDebug("Attempting mmsdk.connect()...");
-                await window.mmsdk.connect();
-                logDebug("mmsdk connected");
-                return window.mmProvider;
+                logDebug("SDK available. Calling mmsdk.connect()...");
+                try {
+                    // This explicitly triggers the deep-link to MetaMask app
+                    await window.mmsdk.connect();
+                    logDebug("SDK connect() finished.");
+                    return window.mmProvider || window.ethereum;
+                } catch (e) {
+                    logDebug("SDK connect() failed: " + e.message);
+                }
             }
+
+            if (window.ethereum) {
+                logDebug("Detected window.ethereum (fallback)");
+                return window.ethereum;
+            }
+
             return null;
         };
 
