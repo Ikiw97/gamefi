@@ -40,81 +40,10 @@
     </script>
 
     <!-- WalletConnect dependencies -->
-    <script src="https://unpkg.com/@walletconnect/universal-provider@2.13.1/dist/index.umd.js"></script>
+    <!-- Ethers v6 for wallet support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
     <script>
-        window.wcProvider = null;
-        window.wcProjectId = '20f947d147b6150ebcb5510766f823dd';
-        window.appKitInitError = null;
-
-        async function initWalletConnect() {
-            try {
-                console.log("Starting WalletConnect initialization...");
-
-                // Retry loop untuk menunggu library load
-                let retries = 0;
-                while (!window.UniversalProvider && retries < 20) {
-                    console.warn("Waiting for UniversalProvider...");
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    retries++;
-                }
-
-                if (!window.UniversalProvider) {
-                    throw new Error("UniversalProvider library failed to load");
-                }
-
-                console.log("UniversalProvider loaded, checking methods...");
-
-                // Try different access patterns
-                let UniversalProvider = null;
-                if (window.UniversalProvider.default) {
-                    UniversalProvider = window.UniversalProvider.default;
-                } else if (window.UniversalProvider.UniversalProvider) {
-                    UniversalProvider = window.UniversalProvider.UniversalProvider;
-                } else {
-                    UniversalProvider = window.UniversalProvider;
-                }
-
-                if (!UniversalProvider || typeof UniversalProvider.init !== 'function') {
-                    console.error("Available methods:", Object.keys(UniversalProvider || {}));
-                    throw new Error("UniversalProvider.init is not a function");
-                }
-
-                // Initialize Universal Provider
-                console.log("Initializing with projectId:", window.wcProjectId);
-                window.wcProvider = await UniversalProvider.init({
-                    projectId: window.wcProjectId,
-                    metadata: {
-                        name: 'Zico Rush',
-                        description: 'GameFi Airdrop App',
-                        url: window.location.origin,
-                        icons: [window.location.origin + '/assets/icons/icon-192.png']
-                    }
-                });
-
-                console.log("✅ WalletConnect Initialized Successfully");
-
-                // DIRECT DEEP LINK LOGIC
-                window.wcProvider.on("display_uri", (uri) => {
-                    console.log("Display URI event received");
-                    const encodedUri = encodeURIComponent(uri);
-                    window.location.href = `metamask://wc?uri=${encodedUri}`;
-                });
-
-                window.wcProvider.on("session_delete", () => {
-                    console.log("WalletConnect Session Deleted");
-                    if (window.walletState && window.walletState.connected) {
-                        if (typeof clearWalletData === 'function') clearWalletData();
-                    }
-                });
-
-            } catch (err) {
-                console.error("❌ WalletConnect setup error:", err);
-                window.appKitInitError = "WalletConnect failed: " + err.message;
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', initWalletConnect);
+        console.log("Wallet initialization ready");
     </script>
     <!-- Pixel Font (VT323) and Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
