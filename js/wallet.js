@@ -1,30 +1,11 @@
-// wallet.js – MetaMask Wallet Connection
+// js/wallet.js – Multi-Wallet Connection via Reown AppKit
 // =============================================
-
-window.addEventListener('load', () => {
-    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        console.warn("MetaMask Mobile requires HTTPS for many features.");
-        // alert("Warning: MetaMask Mobile features may not work reliably on HTTP. Please use HTTPS.");
-    }
-});
 
 // Global Error Logger for debugging
 window.addEventListener('error', function (e) {
     const div = document.createElement('div');
     div.style.cssText = 'position:fixed;top:10px;left:10%;width:80%;background:red;color:white;z-index:9999;padding:15px;font-family:monospace;word-break:break-all;border-radius:8px;border:2px solid white;';
     div.innerHTML = '<b>JS ERROR:</b> ' + e.message + '<br>File: ' + e.filename + '<br>Line: ' + e.lineno;
-    document.body.appendChild(div);
-});
-
-window.addEventListener('unhandledrejection', function (e) {
-    const div = document.createElement('div');
-    div.style.cssText = 'position:fixed;top:90px;left:10%;width:80%;background:#8B0000;color:white;z-index:9999;padding:15px;font-family:monospace;word-break:break-all;border-radius:8px;border:2px solid white;';
-
-    let msg = 'Unknown Promise Error';
-    if (e.reason) {
-        msg = e.reason.message || JSON.stringify(e.reason);
-    }
-    div.innerHTML = '<b>ASYNC ERROR:</b> ' + msg;
     document.body.appendChild(div);
 });
 
@@ -50,152 +31,76 @@ function logDebug(msg) {
     }
 }
 
-// Global state for 2-step verification
-let tempProviderDetails = null;
-let tempAddress = null;
-
 window.walletState = {
     connected: false,
     address: null,
     provider: null
 };
 
-// ── Chain Management ──
-async function ensureBaseChain(providerDetails) {
-    const BASE_CHAIN_ID = '0x2105'; // 8453
-    try {
-        const currentChainId = await providerDetails.request({ method: 'eth_chainId' });
-        if (currentChainId !== BASE_CHAIN_ID) {
-            logDebug("Switching to Base chain...");
-            try {
-                await providerDetails.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: BASE_CHAIN_ID }],
-                });
-            } catch (switchError) {
-                if (switchError.code === 4902) {
-                    await providerDetails.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: BASE_CHAIN_ID,
-                            chainName: 'Base',
-                            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                            rpcUrls: ['https://mainnet.base.org'],
-                            blockExplorerUrls: ['https://basescan.org']
-                        }],
-                    });
-                } else {
-                    throw switchError;
-                }
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        return true;
-    } catch (err) {
-        logDebug("Chain mgmt error: " + err.message);
-        return false;
-    }
-}
-
-// ── Step 1: Connect Wallet ──
+// ── Step 1: Connect Wallet (Open AppKit Modal) ──
 async function connectWallet() {
-    logDebug("connectWallet() triggered");
+    logDebug("connectWallet() triggered (AppKit)");
     const btn = document.getElementById('btnConnectWallet');
     const alertEl = document.getElementById('alertWallet');
 
+    if (!window.appKitModal) {
+        logDebug("AppKit Modal not initialized!");
+        alert("Wallet system starting... Please try again in a second.");
+        return;
+    }
+
     // Already connected
-    if (window.walletState && window.walletState.connected) {
-        if (confirm("Are you sure you want to disconnect?")) {
+    if (window.appKitModal.getIsConnected()) {
+        if (confirm("Disconnect wallet?")) {
             clearWalletData();
         }
         return;
     }
 
-    showLoading('CONNECTING...');
-    if (btn) btn.disabled = true;
-
     try {
-        let providerDetails = null;
-        logDebug("Detecting provider...");
+        logDebug("Opening AppKit Modal...");
+        await window.appKitModal.open();
 
-        const isMetaMaskBrowser = window.ethereum && window.ethereum.isMetaMask && !window.ethereum.isMetaMaskSDK;
+        // Wait for connection state change
+        showLoading('AWAITING CONNECTION...');
 
-        if (isMetaMaskBrowser) {
-            logDebug("Native MetaMask browser detected.");
-            providerDetails = window.ethereum;
-        } else if (window.mmsdk) {
-            logDebug("SDK detected. Calling mmsdk.connect()...");
-            try {
-                await window.mmsdk.connect();
-                providerDetails = window.mmProvider || window.ethereum;
-                logDebug("SDK connect() Success");
-            } catch (e) {
-                logDebug("SDK connect() Error: " + e.message);
-            }
-        }
-
-        if (!providerDetails && window.ethereum) {
-            logDebug("Fallback to window.ethereum");
-            providerDetails = window.ethereum;
-        }
-
-        if (providerDetails) {
-            try {
-                logDebug("Requesting accounts...");
-                const accounts = await providerDetails.request({ method: 'eth_requestAccounts' });
-                if (!accounts || accounts.length === 0) throw new Error('No accounts found');
-
-                const address = accounts[0];
-                logDebug("Account: " + address);
-
-                const chainOk = await ensureBaseChain(providerDetails);
-                if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
-                logDebug("Chain Check Passed");
-
-                // Store for Step 2
-                tempProviderDetails = providerDetails;
-                tempAddress = address;
-
-                // Update UI
+        const checkConnection = setInterval(() => {
+            if (window.appKitModal.getIsConnected()) {
+                clearInterval(checkConnection);
                 hideLoading();
+                const address = window.appKitModal.getAddress();
+                logDebug("Connected: " + address);
+
+                // Update UI for signature step
                 if (btn) {
-                    btn.disabled = false;
-                    logDebug("Updating button to VERIFY");
                     const btnTextNode = document.getElementById('walletBtnText');
                     if (btnTextNode) btnTextNode.textContent = 'VERIFY WALLET';
                     btn.onclick = verifyWallet;
                 }
                 showAlert(alertEl, 'info', 'Step 1 Complete! Click VERIFY WALLET to sign.');
-                return;
-            } catch (err) {
-                logDebug("Connection Error: " + err.message);
-                showAlert(alertEl, 'error', `❌ ${err.message}`);
-                if (btn) btn.disabled = false;
-                hideLoading();
-                return;
             }
-        }
+        }, 1000);
 
-        logDebug("No wallet provider, falling back to demo");
-        const mockAddress = '0x' + Array.from({ length: 40 }, () =>
-            Math.floor(Math.random() * 16).toString(16)).join('');
-        handleWalletConnected(mockAddress, true);
-        hideLoading();
+        // Timeout after 60s
+        setTimeout(() => {
+            clearInterval(checkConnection);
+            hideLoading();
+        }, 60000);
+
     } catch (e) {
-        logDebug("Fatal Connect Error: " + e.message);
+        logDebug("Connect Error: " + e.message);
         hideLoading();
-        if (btn) btn.disabled = false;
     }
 }
 
-// ── Step 2: Verify Wallet (Signature) ──
+// ── Step 2: Verify Wallet (Signature via AppKit Provider) ──
 async function verifyWallet() {
     logDebug("verifyWallet() triggered");
     const btn = document.getElementById('btnConnectWallet');
     const alertEl = document.getElementById('alertWallet');
 
-    if (!tempProviderDetails || !tempAddress) {
-        logDebug("Missing session data for verification");
+    if (!window.appKitModal || !window.appKitModal.getIsConnected()) {
+        logDebug("Wallet not connected");
         if (btn) {
             const btnTextNode = document.getElementById('walletBtnText');
             if (btnTextNode) btnTextNode.textContent = 'CONNECT WALLET';
@@ -208,14 +113,18 @@ async function verifyWallet() {
     if (btn) btn.disabled = true;
 
     try {
-        const address = tempAddress;
+        const address = window.appKitModal.getAddress();
+        const provider = window.appKitModal.getWalletProvider();
+
+        if (!provider) throw new Error("Wallet provider not found");
+
         logDebug("Preparing signature for: " + address);
         const message = `Zico Rush GameFi\nVerify: ${address}\nTime: ${Date.now()}`;
         const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
             .map(b => b.toString(16).padStart(2, '0')).join('');
 
-        logDebug("Requesting personal_sign...");
-        const signature = await tempProviderDetails.request({
+        logDebug("Requesting signature...");
+        const signature = await provider.request({
             method: 'personal_sign',
             params: [hexMsg, address]
         });
@@ -228,8 +137,6 @@ async function verifyWallet() {
         showAlert(alertEl, 'error', `❌ ${err.message}`);
         if (btn) {
             btn.disabled = false;
-            const btnTextNode = document.getElementById('walletBtnText');
-            if (btnTextNode) btnTextNode.textContent = 'VERIFY WALLET';
         }
     } finally {
         hideLoading();
@@ -240,11 +147,9 @@ function handleWalletConnected(address, isDemo) {
     window.walletState.connected = true;
     window.walletState.address = address;
 
-    // Save to localStorage
     localStorage.setItem('dr_wallet', address);
     localStorage.setItem('dr_demo', isDemo ? '1' : '0');
 
-    // Update UI
     const btn = document.getElementById('btnConnectWallet');
     const addressDisplay = document.getElementById('walletAddressDisplay');
 
@@ -252,6 +157,7 @@ function handleWalletConnected(address, isDemo) {
         btn.classList.add('connected');
         const btnTextNode = document.getElementById('walletBtnText');
         if (btnTextNode) btnTextNode.textContent = isDemo ? '🔵 Demo Wallet' : '✅ Wallet Connected';
+        btn.onclick = () => { if (confirm("Disconnect?")) clearWalletData(); };
     }
 
     if (addressDisplay) {
@@ -259,15 +165,11 @@ function handleWalletConnected(address, isDemo) {
         addressDisplay.style.display = 'block';
     }
 
-    // Mark step 1 done, unlock step 2
     markStepDone(1);
     unlockCard('cardProfile');
     setStepActive(2);
 
-    // Prefill if returning player
     checkReturningPlayer(address);
-
-    // Update navbar wallet badge
     if (typeof updateNavWallet === 'function') updateNavWallet();
 }
 
@@ -279,31 +181,23 @@ async function checkReturningPlayer(wallet) {
             .eq('wallet', wallet.toLowerCase())
             .single();
 
-        if (error) throw error; // will jump to catch block if new player
-
+        if (error) throw error;
         if (data) {
-            // Save to localStorage
             localStorage.setItem('dr_username', data.username);
             localStorage.setItem('dr_referralCode', data.referral_code || '');
             localStorage.setItem('dr_points', data.points || 0);
-            if (data.level) {
-                localStorage.setItem('dr_currentLevel', data.level);
-            }
+            if (data.level) localStorage.setItem('dr_currentLevel', data.level);
 
-            // Flag as returning player
             window.walletState.isReturning = true;
 
-            // Hide step 2 and 3 cards to simplify UI for returning players
             const cardProfile = document.getElementById('cardProfile');
             const cardCaptcha = document.getElementById('cardCaptcha');
             if (cardProfile) cardProfile.style.display = 'none';
             if (cardCaptcha) cardCaptcha.style.display = 'none';
 
-            // Mark steps 2 and 3 as done
             markStepDone(2);
             markStepDone(3);
 
-            // Show referral code if exists
             if (data.referral_code) {
                 const refCodeEl = document.getElementById('myReferralCode');
                 const refSection = document.getElementById('myReferralSection');
@@ -311,7 +205,6 @@ async function checkReturningPlayer(wallet) {
                 if (refSection) refSection.style.display = 'block';
             }
 
-            // Unlock Start Game card directly
             const btnStart = document.getElementById('btnStartGame');
             if (btnStart) {
                 btnStart.textContent = '⚡ PLAY NOW';
@@ -320,13 +213,10 @@ async function checkReturningPlayer(wallet) {
             unlockCard('cardStart');
             setStepActive(4);
 
-            // Show welcome message in the Start card
             showAlert(document.getElementById('alertStart'), 'success',
                 `👋 Welcome back, ${data.username}! Level: ${data.level || 1} | ${data.points} pts`);
         }
-    } catch (e) {
-        // New player, no problem
-    }
+    } catch (e) { }
 }
 
 function maskAddress(addr) {
@@ -334,24 +224,6 @@ function maskAddress(addr) {
     return addr.slice(0, 6) + '...' + addr.slice(-4);
 }
 
-// Listen for account changes
-if (typeof window.ethereum !== 'undefined') {
-    window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
-            // User disconnected the wallet
-            clearWalletData();
-        } else {
-            // Switch account
-            handleWalletConnected(accounts[0], false);
-        }
-    });
-
-    window.ethereum.on('disconnect', () => {
-        clearWalletData();
-    });
-}
-
-// ── Logout / Clear Data ──
 function clearWalletData() {
     localStorage.removeItem('dr_wallet');
     localStorage.removeItem('dr_demo');
@@ -359,8 +231,8 @@ function clearWalletData() {
     localStorage.removeItem('dr_referralCode');
     localStorage.removeItem('dr_points');
 
-    if (window.mmsdk) {
-        window.mmsdk.disconnect();
+    if (window.appKitModal) {
+        window.appKitModal.disconnect();
     }
 
     window.walletState.connected = false;
@@ -387,7 +259,6 @@ function showAlert(el, type, msg) {
     el.className = `alert ${type}`;
     el.textContent = msg;
     el.style.display = 'block';
-    // Auto-hide success alerts
     if (type === 'success') {
         setTimeout(() => { el.style.display = 'none'; }, 5000);
     }
