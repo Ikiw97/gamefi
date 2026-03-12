@@ -1843,6 +1843,45 @@
             }
         }
 
+        // ── Chain Management ──
+        async function ensureBaseChain(providerDetails) {
+            const BASE_CHAIN_ID = '0x2105'; // 8453
+            try {
+                const currentChainId = await providerDetails.request({ method: 'eth_chainId' });
+                if (currentChainId !== BASE_CHAIN_ID) {
+                    console.log("Switching to Base chain...");
+                    try {
+                        await providerDetails.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: BASE_CHAIN_ID }],
+                        });
+                    } catch (switchError) {
+                        // This error code indicates that the chain has not been added to MetaMask.
+                        if (switchError.code === 4902) {
+                            await providerDetails.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: BASE_CHAIN_ID,
+                                    chainName: 'Base',
+                                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                                    rpcUrls: ['https://mainnet.base.org'],
+                                    blockExplorerUrls: ['https://basescan.org']
+                                }],
+                            });
+                        } else {
+                            throw switchError;
+                        }
+                    }
+                    // Wait a moment for the sync
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                return true;
+            } catch (err) {
+                console.error("Chain management error:", err);
+                return false;
+            }
+        }
+
         // ── Connect Wallet ──
         async function connectWallet() {
             // Disconnect if already connected
@@ -1882,6 +1921,10 @@
                 }
 
                 if (!providerDetails) throw new Error("Could not initialize wallet provider.");
+
+                // Enforce Base Chain
+                const chainOk = await ensureBaseChain(providerDetails);
+                if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
 
                 // Create Ethers v6 Provider wrapper
                 const provider = new ethers.BrowserProvider(providerDetails);
