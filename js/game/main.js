@@ -70,7 +70,7 @@ window.showToast = function (msg, color = '#a855f7', duration = 2000) {
 };
 
 // ── HMAC Signature Helper (must match server GAME_SECRET) ──
-const GAME_SECRET = 'diamond-rush-secret-key-change-me';
+const GAME_SECRET = 'JIUzI1Nsgstsetst9s6dfj9sdf489iIsInR5cCI6Ik';
 
 async function generateHMAC(message) {
     const encoder = new TextEncoder();
