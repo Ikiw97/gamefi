@@ -47,98 +47,61 @@ async function connectWallet() {
     if (btn) btn.disabled = true;
 
     try {
-        // Try injected provider first (MetaMask extension, browser wallets, etc.)
+        // Check for injected provider (MetaMask, Trust Wallet, etc.)
         if (typeof window.ethereum !== 'undefined') {
+            console.log('Detected injected ethereum provider');
+
             try {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                // Request accounts from the user's wallet
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+
                 if (!accounts || accounts.length === 0) {
                     throw new Error('No accounts found');
                 }
 
                 const address = accounts[0];
+                console.log('Got address:', address);
+
+                // Sign a message to verify ownership
                 const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
 
                 try {
-                    await window.ethereum.request({
+                    const signature = await window.ethereum.request({
                         method: 'personal_sign',
                         params: [message, address]
                     });
-                    console.log('Wallet signed successfully');
+                    console.log('Wallet signed successfully:', signature);
                 } catch (signErr) {
                     console.warn('Sign message rejected or failed:', signErr);
                     throw new Error('Signature request was rejected. Connection canceled.');
                 }
 
+                // Success! Connection established
                 handleWalletConnected(address, false);
                 showAlert(alertEl, 'success', '✅ Wallet connected successfully!');
                 return;
-            } catch (injectedErr) {
-                // If injected provider fails, fall back to WalletConnect
-                console.warn('Injected provider error, trying WalletConnect:', injectedErr);
+
+            } catch (err) {
+                console.error('Injected provider error:', err);
+                const msg = err.message || 'Failed to connect wallet';
+                showAlert(alertEl, 'error', `❌ ${msg}`);
+                if (btn) btn.disabled = false;
+                return;
             }
         }
 
-        // Fallback to WalletConnect for mobile or if injected provider not available
-        // Wait for wcProvider to be ready if it's still initializing
-        let wcReady = window.wcProvider;
-        let waitCount = 0;
-        while (!wcReady && waitCount < 10) {
-            console.warn('Waiting for WalletConnect to initialize...');
-            await new Promise(resolve => setTimeout(resolve, 200));
-            wcReady = window.wcProvider;
-            waitCount++;
-        }
-
-        if (wcReady) {
-            console.log('Attempting WalletConnect...');
-            const session = await wcReady.connect({
-                namespaces: {
-                    eip155: {
-                        methods: [
-                            "eth_sendTransaction",
-                            "eth_signTransaction",
-                            "eth_sign",
-                            "personal_sign",
-                            "eth_signTypedData",
-                        ],
-                        chains: ["eip155:1"],
-                        events: ["chainChanged", "accountsChanged"],
-                    }
-                }
-            });
-
-            if (session && session.namespaces && session.namespaces.eip155) {
-                const accounts = session.namespaces.eip155.accounts;
-                if (accounts && accounts.length > 0) {
-                    const address = accounts[0].split(':').pop();
-                    handleWalletConnected(address, false);
-                    showAlert(alertEl, 'success', '✅ Wallet connected successfully!');
-                    return;
-                }
-            }
-        } else {
-            console.warn('WalletConnect provider not initialized');
-        }
-
-        // If no wallet provider is available, show demo mode
+        // No wallet detected
+        console.warn('No wallet detected - using demo mode');
         const mockAddress = '0x' + Array.from({ length: 40 }, () =>
             Math.floor(Math.random() * 16).toString(16)).join('');
         handleWalletConnected(mockAddress, true);
-        showAlert(alertEl, 'info', '⚠️ Wallet not detected. Running in DEMO mode with mock wallet.');
+        showAlert(alertEl, 'info', '⚠️ No wallet detected. Running in DEMO mode.');
 
     } catch (err) {
         console.error('Wallet connect error:', err);
-        let msg = '❌ Connection failed. ';
-
-        if (err.code === 4001 || (err.message && err.message.includes('User rejected'))) {
-            msg += 'You rejected the connection request.';
-        } else if (err.code === -32002 || (err.message && err.message.includes('already pending'))) {
-            msg += 'MetaMask is already pending a connection request. Open your extension directly.';
-        } else {
-            msg += err.message || 'Unknown error occurred.';
-        }
-
-        showAlert(alertEl, 'error', msg);
+        showAlert(alertEl, 'error', '❌ ' + (err.message || 'Connection failed'));
         if (btn) btn.disabled = false;
     } finally {
         hideLoading();
