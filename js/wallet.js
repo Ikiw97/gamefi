@@ -47,13 +47,37 @@ async function connectWallet() {
     if (btn) btn.disabled = true;
 
     try {
-        // Use AppKit (WalletConnect) if available for better mobile support
-        if (window.appKitModal) {
-            await window.appKitModal.open();
+        // Use WalletConnect Universal Provider if available (Desktop/General Mobile)
+        if (window.wcProvider) {
+            const session = await window.wcProvider.connect({
+                namespaces: {
+                    eip155: {
+                        methods: [
+                            "eth_sendTransaction",
+                            "eth_signTransaction",
+                            "eth_sign",
+                            "personal_sign",
+                            "eth_signTypedData",
+                        ],
+                        chains: ["eip155:1"],
+                        events: ["chainChanged", "accountsChanged"],
+                    }
+                }
+            });
+
+            if (session) {
+                const eip155Provider = new ethers.BrowserProvider(window.wcProvider);
+                const signer = await eip155Provider.getSigner();
+                const address = await signer.getAddress();
+                if (address) {
+                    handleWalletConnected(address, false);
+                    showAlert(alertEl, 'success', '✅ Wallet connected successfully!');
+                }
+            }
             return;
         }
 
-        // Fallback to Injected (MetaMask)
+        // Fallback to Injected (MetaMask Extension/App Browser)
         if (typeof window.ethereum === 'undefined') {
             const mockAddress = '0x' + Array.from({ length: 40 }, () =>
                 Math.floor(Math.random() * 16).toString(16)).join('');
@@ -214,7 +238,9 @@ function clearWalletData() {
     localStorage.removeItem('dr_referralCode');
     localStorage.removeItem('dr_points');
 
-    if (window.appKitModal) window.appKitModal.disconnect();
+    if (window.wcProvider && window.wcProvider.session) {
+        window.wcProvider.disconnect().catch(e => console.warn("Disconnect error:", e));
+    }
 
     window.walletState.connected = false;
     window.walletState.address = null;
