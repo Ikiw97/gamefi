@@ -745,6 +745,17 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.flash(500, 34, 197, 94, false);
         window.showToast(`🏆 LEVEL COMPLETE! +${bonus} pts`, '#22c55e', 2000);
 
+        // Animate player entering the door (shrink, fade, and spin)
+        this.tweens.add({
+            targets: this.player,
+            scaleX: 0,
+            scaleY: 0,
+            alpha: 0,
+            rotation: Math.PI * 2, // 360 degree spin
+            duration: 600,
+            ease: 'Cubic.In'
+        });
+
         // Submit score to backend
         window.submitScore(
             gs.totalPoints - this.sessionStartPoints,
