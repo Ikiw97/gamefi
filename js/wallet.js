@@ -22,7 +22,9 @@ window.addEventListener('unhandledrejection', function (e) {
     document.body.appendChild(div);
 });
 
-// window.APP_API_URL is no longer needed since we use Supabase directly
+// Shared state for 2-step verification
+let tempProviderDetails = null;
+let tempAddress = null;
 
 window.walletState = {
     connected: false,
@@ -67,103 +69,114 @@ async function ensureBaseChain(providerDetails) {
     }
 }
 
-
+// ── Step 1: Connect Wallet ──
 async function connectWallet() {
     const btn = document.getElementById('btnConnectWallet');
     const alertEl = document.getElementById('alertWallet');
-    const addressDisplay = document.getElementById('walletAddressDisplay');
 
     // Already connected
     if (window.walletState && window.walletState.connected) {
-        if (confirm("Are you sure you want to disconnect your wallet?")) {
+        if (confirm("Are you sure you want to disconnect?")) {
             clearWalletData();
         }
         return;
     }
 
-    showLoading('CONNECTING WALLET...');
+    showLoading('CONNECTING...');
     if (btn) btn.disabled = true;
 
     try {
         let providerDetails = null;
-
-        // 1. Injected Provider
         if (typeof window.ethereum !== 'undefined') {
             providerDetails = window.ethereum;
-        }
-        // 2. Fallback to MetaMask SDK (Mobile Chrome/Safari)
-        else if (window.mmsdk) {
-            console.log('Using MetaMask SDK for fallback');
+        } else if (window.mmsdk) {
             await window.mmsdk.connect();
             providerDetails = window.mmProvider;
         }
 
         if (providerDetails) {
             try {
-                // Request accounts
-                let accounts;
-                if (providerDetails === window.ethereum) {
-                    accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                } else {
-                    accounts = await providerDetails.request({ method: 'eth_requestAccounts' });
-                }
-
+                const accounts = await providerDetails.request({ method: 'eth_requestAccounts' });
                 if (!accounts || accounts.length === 0) throw new Error('No accounts found');
 
                 const address = accounts[0];
-                console.log('Got address:', address);
-
-                // Enforce Base Chain (AFTER connection)
                 const chainOk = await ensureBaseChain(providerDetails);
                 if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
 
-                // MANDATORY DELAY for MetaMask Mobile to sync UI
-                console.log("Waiting for MetaMask to sync...");
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Store for Step 2
+                tempProviderDetails = providerDetails;
+                tempAddress = address;
 
-                // Sign a message to verify ownership
-                const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
-
-                // Convert message to hex for better personal_sign compatibility
-                const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
-                    .map(b => b.toString(16).padStart(2, '0')).join('');
-
-                try {
-                    console.log("Requesting signature...");
-                    const signature = await providerDetails.request({
-                        method: 'personal_sign',
-                        params: [hexMsg, address]
-                    });
-                    console.log('Wallet signed successfully:', signature);
-                } catch (signErr) {
-                    console.warn('Sign message rejected or failed:', signErr);
-                    throw new Error('Signature request was rejected. Connection canceled.');
+                // Update UI
+                hideLoading();
+                if (btn) {
+                    btn.disabled = false;
+                    const btnTextNode = document.getElementById('walletBtnText');
+                    if (btnTextNode) btnTextNode.textContent = 'VERIFY WALLET';
+                    btn.onclick = verifyWallet;
                 }
-
-                // Success!
-                handleWalletConnected(address, false);
-                showAlert(alertEl, 'success', '✅ Wallet connected successfully!');
+                showAlert(alertEl, 'info', 'Step 1 Complete! Click VERIFY WALLET to sign.');
                 return;
             } catch (err) {
-                console.error('Provider connection error:', err);
-                const msg = err.message || 'Failed to connect wallet';
-                showAlert(alertEl, 'error', `❌ ${msg}`);
+                console.error('Connection error:', err);
+                showAlert(alertEl, 'error', `❌ ${err.message}`);
                 if (btn) btn.disabled = false;
+                hideLoading();
                 return;
             }
         }
 
-        // 3. Demo Mode Fallback
-        console.warn('No wallet detected - using demo mode');
+        // Demo Mode Fallback
+        console.warn('No wallet detected - demo mode');
         const mockAddress = '0x' + Array.from({ length: 40 }, () =>
             Math.floor(Math.random() * 16).toString(16)).join('');
         handleWalletConnected(mockAddress, true);
-        showAlert(alertEl, 'info', '⚠️ No wallet detected. Running in DEMO mode.');
-
-    } catch (err) {
-        console.error('Wallet connect error:', err);
-        showAlert(alertEl, 'error', '❌ ' + (err.message || 'Connection failed'));
+        hideLoading();
+    } catch (e) {
+        hideLoading();
         if (btn) btn.disabled = false;
+    }
+}
+
+// ── Step 2: Verify Wallet (Signature) ──
+async function verifyWallet() {
+    const btn = document.getElementById('btnConnectWallet');
+    const alertEl = document.getElementById('alertWallet');
+
+    if (!tempProviderDetails || !tempAddress) {
+        if (btn) {
+            const btnTextNode = document.getElementById('walletBtnText');
+            if (btnTextNode) btnTextNode.textContent = 'CONNECT WALLET';
+            btn.onclick = connectWallet;
+        }
+        return;
+    }
+
+    showLoading('VERIFYING...');
+    if (btn) btn.disabled = true;
+
+    try {
+        const address = tempAddress;
+        const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
+        const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
+            .map(b => b.toString(16).padStart(2, '0')).join('');
+
+        const signature = await tempProviderDetails.request({
+            method: 'personal_sign',
+            params: [hexMsg, address]
+        });
+
+        console.log('Verified!');
+        handleWalletConnected(address, false);
+        showAlert(alertEl, 'success', '✅ Verified!');
+    } catch (err) {
+        console.error('Verification error:', err);
+        showAlert(alertEl, 'error', `❌ ${err.message}`);
+        if (btn) {
+            btn.disabled = false;
+            const btnTextNode = document.getElementById('walletBtnText');
+            if (btnTextNode) btnTextNode.textContent = 'VERIFY WALLET';
+        }
     } finally {
         hideLoading();
     }
@@ -181,10 +194,16 @@ function handleWalletConnected(address, isDemo) {
     const btn = document.getElementById('btnConnectWallet');
     const addressDisplay = document.getElementById('walletAddressDisplay');
 
-    btn.classList.add('connected');
-    document.getElementById('walletBtnText').textContent = isDemo ? '🔵 Demo Wallet' : '✅ Wallet Connected';
-    addressDisplay.textContent = maskAddress(address);
-    addressDisplay.style.display = 'block';
+    if (btn) {
+        btn.classList.add('connected');
+        const btnTextNode = document.getElementById('walletBtnText');
+        if (btnTextNode) btnTextNode.textContent = isDemo ? '🔵 Demo Wallet' : '✅ Wallet Connected';
+    }
+
+    if (addressDisplay) {
+        addressDisplay.textContent = maskAddress(address);
+        addressDisplay.style.display = 'block';
+    }
 
     // Mark step 1 done, unlock step 2
     markStepDone(1);
@@ -221,23 +240,29 @@ async function checkReturningPlayer(wallet) {
             window.walletState.isReturning = true;
 
             // Hide step 2 and 3 cards to simplify UI for returning players
-            document.getElementById('cardProfile').style.display = 'none';
-            document.getElementById('cardCaptcha').style.display = 'none';
+            const cardProfile = document.getElementById('cardProfile');
+            const cardCaptcha = document.getElementById('cardCaptcha');
+            if (cardProfile) cardProfile.style.display = 'none';
+            if (cardCaptcha) cardCaptcha.style.display = 'none';
 
             // Mark steps 2 and 3 as done
             markStepDone(2);
             markStepDone(3);
 
             // Show referral code if exists
-            if (data.referralCode) {
-                document.getElementById('myReferralCode').textContent = data.referralCode;
-                document.getElementById('myReferralSection').style.display = 'block';
+            if (data.referral_code) {
+                const refCodeEl = document.getElementById('myReferralCode');
+                const refSection = document.getElementById('myReferralSection');
+                if (refCodeEl) refCodeEl.textContent = data.referral_code;
+                if (refSection) refSection.style.display = 'block';
             }
 
             // Unlock Start Game card directly
             const btnStart = document.getElementById('btnStartGame');
-            btnStart.textContent = '⚡ PLAY NOW';
-            btnStart.disabled = false;
+            if (btnStart) {
+                btnStart.textContent = '⚡ PLAY NOW';
+                btnStart.disabled = false;
+            }
             unlockCard('cardStart');
             setStepActive(4);
 
@@ -293,7 +318,8 @@ function clearWalletData() {
 // ── Utility helpers ──
 function showLoading(text = 'LOADING...') {
     const el = document.getElementById('loadingOverlay');
-    document.getElementById('loadingText').textContent = text;
+    const textEl = document.getElementById('loadingText');
+    if (textEl) textEl.textContent = text;
     if (el) el.style.display = 'flex';
 }
 
@@ -335,10 +361,14 @@ function unlockCard(cardId) {
 }
 
 function copyReferral() {
-    const code = document.getElementById('myReferralCode').textContent;
+    const codeEl = document.getElementById('myReferralCode');
+    if (!codeEl) return;
+    const code = codeEl.textContent;
     navigator.clipboard.writeText(code).then(() => {
         const btn = document.querySelector('.btn-copy');
-        btn.textContent = 'Copied!';
-        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        if (btn) {
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        }
     });
 }
