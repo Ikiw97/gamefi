@@ -40,7 +40,7 @@
     </script>
 
     <!-- WalletConnect dependencies -->
-    <script src="https://unpkg.com/@walletconnect/universal-provider@2.13.1/dist/index.umd.js" defer></script>
+    <script src="https://unpkg.com/@walletconnect/universal-provider@2.13.1/dist/index.umd.js"></script>
     <script>
         window.wcProvider = null;
         window.wcProjectId = '20f947d147b6150ebcb5510766f823dd';
@@ -48,22 +48,39 @@
 
         async function initWalletConnect() {
             try {
-                // Wait for UniversalProvider to be available (loaded by defer script)
-                if (!window.UniversalProvider) {
-                    console.warn("UniversalProvider not loaded yet, retrying...");
-                    setTimeout(initWalletConnect, 100);
-                    return;
+                console.log("Starting WalletConnect initialization...");
+
+                // Retry loop untuk menunggu library load
+                let retries = 0;
+                while (!window.UniversalProvider && retries < 20) {
+                    console.warn("Waiting for UniversalProvider...");
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    retries++;
                 }
 
-                // Access the correct export path
-                const UniversalProvider = window.UniversalProvider.default || window.UniversalProvider;
-                if (!UniversalProvider || !UniversalProvider.init) {
-                    console.warn("UniversalProvider.init not available");
-                    window.appKitInitError = "UniversalProvider not properly loaded";
-                    return;
+                if (!window.UniversalProvider) {
+                    throw new Error("UniversalProvider library failed to load");
+                }
+
+                console.log("UniversalProvider loaded, checking methods...");
+
+                // Try different access patterns
+                let UniversalProvider = null;
+                if (window.UniversalProvider.default) {
+                    UniversalProvider = window.UniversalProvider.default;
+                } else if (window.UniversalProvider.UniversalProvider) {
+                    UniversalProvider = window.UniversalProvider.UniversalProvider;
+                } else {
+                    UniversalProvider = window.UniversalProvider;
+                }
+
+                if (!UniversalProvider || typeof UniversalProvider.init !== 'function') {
+                    console.error("Available methods:", Object.keys(UniversalProvider || {}));
+                    throw new Error("UniversalProvider.init is not a function");
                 }
 
                 // Initialize Universal Provider
+                console.log("Initializing with projectId:", window.wcProjectId);
                 window.wcProvider = await UniversalProvider.init({
                     projectId: window.wcProjectId,
                     metadata: {
@@ -74,14 +91,12 @@
                     }
                 });
 
-                console.log("WalletConnect v2 Initialized Successfully");
+                console.log("✅ WalletConnect Initialized Successfully");
 
-                // DIRECT DEEP LINK LOGIC:
-                // When WC needs to show a QR/URI, we directly redirect to MetaMask app
+                // DIRECT DEEP LINK LOGIC
                 window.wcProvider.on("display_uri", (uri) => {
-                    console.log("Directing to MetaMask via Deep Link...");
+                    console.log("Display URI event received");
                     const encodedUri = encodeURIComponent(uri);
-                    // Standard MetaMask deep link format for WalletConnect
                     window.location.href = `metamask://wc?uri=${encodedUri}`;
                 });
 
@@ -93,17 +108,13 @@
                 });
 
             } catch (err) {
-                console.error("WalletConnect setup error:", err);
-                window.appKitInitError = "WalletConnect failed to load: " + err.message;
+                console.error("❌ WalletConnect setup error:", err);
+                window.appKitInitError = "WalletConnect failed: " + err.message;
             }
         }
 
-        // Initialize when DOM is ready and libraries are loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initWalletConnect);
-        } else {
-            setTimeout(initWalletConnect, 500);
-        }
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initWalletConnect);
     </script>
     <!-- Pixel Font (VT323) and Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
