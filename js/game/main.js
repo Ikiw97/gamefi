@@ -69,10 +69,26 @@ window.showToast = function (msg, color = '#a855f7', duration = 2000) {
     setTimeout(() => { toast.style.opacity = '0'; }, duration);
 };
 
-// ── Submit Score to Backend ───────────────────────────
+// ── HMAC Signature Helper (must match server GAME_SECRET) ──
+const GAME_SECRET = 'diamond-rush-secret-key-change-me';
+
+async function generateHMAC(message) {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(GAME_SECRET);
+    const msgData = encoder.encode(message);
+
+    const cryptoKey = await crypto.subtle.importKey(
+        "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const sigBuf = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
+    return Array.from(new Uint8Array(sigBuf))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── Submit Score to Backend (secured with HMAC) ───────────────────────────
 window.submitScore = async function (points, level, diamonds) {
     try {
-        // OPTIMISTIC LOCAL UPDATE (berlaku untuk guest dan player offline)
+        // OPTIMISTIC LOCAL UPDATE (for guest / offline display)
         let maxLvl = Math.max(parseInt(localStorage.getItem('dr_maxLevel') || '1'), level);
         localStorage.setItem('dr_maxLevel', maxLvl);
         localStorage.setItem('dr_currentLevel', level);
@@ -87,82 +103,41 @@ window.submitScore = async function (points, level, diamonds) {
             return;
         }
 
-        // Try Edge Function first, fallback to direct DB update
-        let saved = false;
+        // Generate HMAC signature for anti-cheat
+        const timestamp = Date.now();
+        const walletLower = playerSession.wallet.toLowerCase();
+        const message = `${walletLower}:${points}:${level}:${diamonds}:${timestamp}`;
+        const signature = await generateHMAC(message);
 
-        try {
-            const { data, error } = await window.supabaseClient.functions.invoke('submit-score', {
-                body: { 
-                    wallet: playerSession.wallet,
-                    points: points,
-                    level: level,
-                    diamonds: diamonds,
-                }
-            });
-
-            if (error) throw error;
-
-            if (data && data.success) {
-                localStorage.setItem('dr_points', data.totalPoints);
-                maxLvl = Math.max(maxLvl, data.level);
-                localStorage.setItem('dr_maxLevel', maxLvl);
-                localStorage.setItem('dr_currentLevel', maxLvl);
-                window.gameState.totalPoints = data.totalPoints;
-                window.gameState.currentLevel = maxLvl;
-                window.showToast(`Score saved! +${points} pts`, '#22c55e', 3000);
-                saved = true;
+        const { data, error } = await window.supabaseClient.functions.invoke('submit-score', {
+            body: { 
+                wallet: playerSession.wallet,
+                points: points,
+                level: level,
+                diamonds: diamonds,
+                signature: signature,
+                timestamp: timestamp,
             }
-        } catch (edgeFnErr) {
-            console.warn('Edge function failed, trying direct DB update:', edgeFnErr.message);
-        }
+        });
 
-        // FALLBACK: Direct Supabase update if edge function failed
-        if (!saved) {
-            try {
-                const walletLower = playerSession.wallet.toLowerCase();
-                
-                // Get current profile data
-                const { data: profile } = await window.supabaseClient
-                    .from('profiles')
-                    .select('points, diamonds_collected, level')
-                    .eq('wallet', walletLower)
-                    .single();
+        if (error) throw error;
 
-                if (profile) {
-                    const newTotalPoints = (profile.points || 0) + points;
-                    const newTotalDiamonds = (profile.diamonds_collected || 0) + diamonds;
-                    const newMaxLevel = Math.max(profile.level || 1, level);
-
-                    const { error: updateErr } = await window.supabaseClient
-                        .from('profiles')
-                        .update({
-                            points: newTotalPoints,
-                            diamonds_collected: newTotalDiamonds,
-                            level: newMaxLevel
-                        })
-                        .eq('wallet', walletLower);
-
-                    if (updateErr) throw updateErr;
-
-                    // Sync local state
-                    localStorage.setItem('dr_points', newTotalPoints);
-                    maxLvl = Math.max(maxLvl, newMaxLevel);
-                    localStorage.setItem('dr_maxLevel', maxLvl);
-                    localStorage.setItem('dr_currentLevel', maxLvl);
-                    window.gameState.totalPoints = newTotalPoints;
-                    window.gameState.currentLevel = maxLvl;
-
-                    window.showToast(`Score saved! +${points} pts`, '#22c55e', 3000);
-                    saved = true;
-                }
-            } catch (directErr) {
-                console.error('Direct DB update also failed:', directErr.message);
-                window.showToast('⚠️ Could not save score', '#ef4444', 3000);
-            }
+        if (data && data.success) {
+            localStorage.setItem('dr_points', data.totalPoints);
+            maxLvl = Math.max(maxLvl, data.level);
+            localStorage.setItem('dr_maxLevel', maxLvl);
+            localStorage.setItem('dr_currentLevel', maxLvl);
+            window.gameState.totalPoints = data.totalPoints;
+            window.gameState.currentLevel = maxLvl;
+            window.showToast(`Score saved! +${points} pts`, '#22c55e', 3000);
+        } else {
+            console.warn('Score rejected by server:', data?.error || 'unknown reason');
+            window.showToast('⚠️ Score rejected by server', '#ef4444', 3000);
         }
 
     } catch (e) {
         console.warn('Score submit failed:', e.message);
+        window.showToast('⚠️ Could not save score', '#ef4444', 3000);
     }
 };
 
