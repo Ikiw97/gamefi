@@ -186,7 +186,9 @@ async function checkReturningPlayer(wallet) {
             localStorage.setItem('dr_username', data.username);
             localStorage.setItem('dr_referralCode', data.referral_code || '');
             localStorage.setItem('dr_points', data.points || 0);
-            if (data.level) localStorage.setItem('dr_currentLevel', data.level);
+            const playerLevel = Math.max(data.level || 1, data.max_level || 1);
+            localStorage.setItem('dr_currentLevel', playerLevel);
+            localStorage.setItem('dr_maxLevel', playerLevel);
 
             window.walletState.isReturning = true;
 
@@ -214,7 +216,7 @@ async function checkReturningPlayer(wallet) {
             setStepActive(4);
 
             showAlert(document.getElementById('alertStart'), 'success',
-                `👋 Welcome back, ${data.username}! Level: ${data.level || 1} | ${data.points} pts`);
+                `👋 Welcome back, ${data.username}! Level: ${playerLevel} | ${data.points} pts`);
         }
     } catch (e) { }
 }
