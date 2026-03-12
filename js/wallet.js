@@ -99,10 +99,6 @@ async function connectWallet() {
         }
 
         if (providerDetails) {
-            // Enforce Base Chain
-            const chainOk = await ensureBaseChain(providerDetails);
-            if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
-
             try {
                 // Request accounts
                 let accounts;
@@ -116,6 +112,10 @@ async function connectWallet() {
 
                 const address = accounts[0];
                 console.log('Got address:', address);
+
+                // Enforce Base Chain (AFTER connection)
+                const chainOk = await ensureBaseChain(providerDetails);
+                if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
 
                 // Sign a message to verify ownership
                 const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
