@@ -18,37 +18,30 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- AppKit (WalletConnect) ESM -->
-    <script type="module">
-        import { createAppKit, EthersAdapter } from 'https://esm.run/@reown/appkit/ethers'
-        import { mainnet } from 'https://esm.run/@reown/appkit/networks'
-
-        const projectId = '20f947d147b6150ebcb5510766f823dd';
-        const networks = [mainnet];
-        const ethersAdapter = new EthersAdapter();
-
-        const modal = createAppKit({
-            adapters: [ethersAdapter],
-            networks,
-            metadata: {
-                name: 'Zico Rush',
-                description: 'GameFi Airdrop App',
-                url: window.location.origin,
-                icons: [window.location.origin + '/assets/icons/icon-192.png']
-            },
-            projectId,
-            features: { analytics: true }
-        });
-
-        window.appKitModal = modal;
-
-        // Handle account changes
-        modal.subscribeState(async (state) => {
-            const address = modal.getAddress();
-            if (address && window.walletState && !window.walletState.connected) {
-                console.log("[AppKit] Connected:", address);
+    <!-- WalletConnect v2 (Universal Provider UMD for Mobile Stability) -->
+    <script src="https://unpkg.com/@walletconnect/universal-provider@2.10.4/dist/index.umd.js"></script>
+    <script>
+        window.wcProvider = null;
+        async function initWalletConnect() {
+            try {
+                const projectId = '20f947d147b6150ebcb5510766f823dd';
+                window.wcProvider = await window.UniversalProvider.UniversalProvider.init({
+                    projectId,
+                    metadata: {
+                        name: 'Zico Rush',
+                        description: 'GameFi Airdrop App',
+                        url: window.location.origin,
+                        icons: [window.location.origin + '/assets/icons/icon-192.png']
+                    }
+                });
+                window.wcProvider.on("display_uri", (uri) => {
+                    window.location.href = `metamask://wc?uri=${encodeURIComponent(uri)}`;
+                });
+            } catch (err) {
+                console.warn("WalletConnect init error:", err);
             }
-        });
+        }
+        initWalletConnect();
     </script>
     <style>
         body {
