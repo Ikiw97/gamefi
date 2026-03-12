@@ -746,7 +746,7 @@ class GameScene extends Phaser.Scene {
         // Submit score to backend
         window.submitScore(
             gs.totalPoints - this.sessionStartPoints,
-            playedLevel,
+            playedLevel + 1, // Report next level reached
             this.diamondsThisLevel
         );
 
