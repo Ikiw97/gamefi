@@ -1889,8 +1889,8 @@
                         logDebug("Injected wallet connected: " + address);
                         _activeProvider = 'injected';
 
-                        // Request signature for verification
-                        await verifyWithProvider(window.ethereum, address);
+                        // Skip signature, trust the injected provider
+                        onWalletConnectUI(address);
                         return;
                     } else {
                         throw new Error("No accounts returned");
@@ -1932,18 +1932,28 @@
             }
 
             // Already connected via AppKit?
-            if (window.appKitModal.getIsConnected && window.appKitModal.getIsConnected()) {
-                const address = window.appKitModal.getAddress();
-                if (address) {
-                    _activeProvider = 'appkit';
-                    const provider = window.appKitModal.getWalletProvider ? window.appKitModal.getWalletProvider() : null;
-                    if (provider) {
-                        await verifyWithProvider(provider, address);
-                    } else {
-                        onWalletConnectUI(address);
-                    }
-                    return;
+            let isAppKitConnected = false;
+            let appKitAddress = null;
+
+            if (window.appKitModal.getAccount) {
+                const acc = window.appKitModal.getAccount();
+                if (acc && acc.isConnected) {
+                    isAppKitConnected = true;
+                    appKitAddress = acc.address;
                 }
+            } else if (window.appKitModal.getIsConnectedState) {
+                isAppKitConnected = window.appKitModal.getIsConnectedState();
+                appKitAddress = window.appKitModal.getAddress();
+            } else if (window.appKitModal.getIsConnected) {
+                isAppKitConnected = window.appKitModal.getIsConnected();
+                appKitAddress = window.appKitModal.getAddress();
+            }
+
+            if (isAppKitConnected && appKitAddress) {
+                logDebug("AppKit already connected!");
+                _activeProvider = 'appkit';
+                onWalletConnectUI(appKitAddress);
+                return;
             }
 
             try {
@@ -1953,18 +1963,7 @@
                 window._onAppKitConnect = async function(address) {
                     logDebug("AppKit connected: " + address);
                     _activeProvider = 'appkit';
-                    const provider = window.appKitModal.getWalletProvider ? window.appKitModal.getWalletProvider() : null;
-                    if (provider) {
-                        try {
-                            await verifyWithProvider(provider, address);
-                        } catch(e) {
-                            logDebug("AppKit verify failed: " + e.message);
-                            // Still proceed without signature
-                            onWalletConnectUI(address);
-                        }
-                    } else {
-                        onWalletConnectUI(address);
-                    }
+                    onWalletConnectUI(address);
                 };
 
                 await window.appKitModal.open();
@@ -2002,50 +2001,7 @@
             }
         }
 
-        // ── Verify wallet via signature (works with any EIP-1193 provider) ──
-        let _isVerifying = false;
-        async function verifyWithProvider(provider, address) {
-            if (_isVerifying) {
-                logDebug("Already verifying, skipping duplicate call");
-                return;
-            }
-            
-            logDebug("Verifying wallet: " + address);
-            const btnText = document.getElementById('connectBtnText');
-            const btn = document.getElementById('mainConnectBtn');
 
-            if (btnText) btnText.textContent = 'Verifying...';
-            _isVerifying = true;
-
-            try {
-                const message = `Zico Rush GameFi\nVerify: ${address}\nTime: ${Date.now()}`;
-                const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
-                    .map(b => b.toString(16).padStart(2, '0')).join('');
-
-                logDebug("Requesting signature...");
-                const signature = await provider.request({
-                    method: 'personal_sign',
-                    params: [hexMsg, address]
-                });
-
-                logDebug("Signature OK!");
-                onWalletConnectUI(address);
-            } catch (err) {
-                logDebug("Signature error: " + err.message);
-                if (err.code === 4001) {
-                    // User rejected signature – still mark as connected but warn
-                    logDebug("User rejected signature, proceeding without verify");
-                    onWalletConnectUI(address);
-                } else {
-                    // Other error – still connect but log
-                    logDebug("Signature failed but proceeding: " + err.message);
-                    onWalletConnectUI(address);
-                }
-            } finally {
-                _isVerifying = false;
-                if (btn) btn.disabled = false;
-            }
-        }
 
         // onWalletDisconnectUI helper
         window.onWalletDisconnectUI = function () {
