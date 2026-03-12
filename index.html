@@ -1843,9 +1843,41 @@
             }
         }
 
+        // ── Mobile Debug Console ──
+        function logDebug(msg) {
+            console.log("[DEBUG]", msg);
+            const consoleEl = document.getElementById('debug-console');
+            if (consoleEl) {
+                const entry = document.createElement('div');
+                entry.style.borderBottom = '1px solid #333';
+                entry.style.padding = '4px 0';
+                entry.style.fontSize = '10px';
+                entry.textContent = `> ${new Date().toLocaleTimeString()}: ${msg}`;
+                consoleEl.prepend(entry);
+                while (consoleEl.children.length > 20) {
+                    consoleEl.removeChild(consoleEl.lastChild);
+                }
+            }
+        }
+
         // Global state for 2-step verification
         let tempProviderDetails = null;
         let tempAddress = null;
+
+        window.getProvider = async function () {
+            logDebug("Checking providers...");
+            if (window.ethereum) {
+                logDebug("Detected window.ethereum");
+                return window.ethereum;
+            }
+            if (window.mmsdk) {
+                logDebug("Attempting mmsdk.connect()...");
+                await window.mmsdk.connect();
+                logDebug("mmsdk connected");
+                return window.mmProvider;
+            }
+            return null;
+        };
 
         // ── Chain Management ──
         async function ensureBaseChain(providerDetails) {
@@ -1886,6 +1918,7 @@
 
         // ── Step 1: Connect Wallet ──
         async function connectWallet() {
+            logDebug("Step 1: connectWallet called");
             // Check if already connected via state
             if (playerState.connected || playerState.wallet) {
                 if (confirm('Disconnect wallet?')) {
@@ -1898,33 +1931,38 @@
             if (btnText) btnText.textContent = 'Connecting...';
 
             try {
-                let providerDetails = null;
-                if (window.ethereum) {
-                    providerDetails = window.ethereum;
-                } else if (window.mmsdk) {
-                    await window.mmsdk.connect();
-                    providerDetails = window.mmProvider;
-                } else {
+                const providerDetails = await window.getProvider();
+                if (!providerDetails) {
+                    logDebug("No provider found");
                     throw new Error("No wallet provider found. Please install MetaMask!");
                 }
 
+                logDebug("Requesting accounts...");
                 const accounts = await providerDetails.request({ method: 'eth_requestAccounts' });
-                if (!accounts || accounts.length === 0) throw new Error("No accounts found.");
+                if (!accounts || accounts.length === 0) {
+                    logDebug("User rejected or no accounts");
+                    throw new Error("No accounts found.");
+                }
 
                 const address = accounts[0];
+                logDebug("Got address: " + address);
+
                 const chainOk = await ensureBaseChain(providerDetails);
-                if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
+                if (!chainOk) {
+                    logDebug("Chain switch failed/rejected");
+                    throw new Error("Please switch to Base Chain to continue.");
+                }
 
                 tempProviderDetails = providerDetails;
                 tempAddress = address;
 
+                logDebug("Step 1 Success. Changing button to Verify.");
                 if (btnText) btnText.textContent = 'Verify Wallet';
                 const btn = document.getElementById('btnConnectWallet');
                 if (btn) btn.onclick = verifyWallet;
 
-                alert("Step 1 Complete! Click 'Verify Wallet' to sign the message.");
             } catch (err) {
-                console.error("Connect error:", err);
+                logDebug("Error in Step 1: " + err.message);
                 alert("Failed to connect: " + err.message);
                 if (btnText) btnText.textContent = 'Connect Wallet';
             }
@@ -1932,7 +1970,9 @@
 
         // ── Step 2: Verify Wallet ──
         async function verifyWallet() {
+            logDebug("Step 2: verifyWallet called");
             if (!tempProviderDetails || !tempAddress) {
+                logDebug("Missing provider/address for signature");
                 const btn = document.getElementById('btnConnectWallet');
                 if (btn) btn.onclick = connectWallet;
                 return;
@@ -1942,17 +1982,20 @@
             if (btnText) btnText.textContent = 'Verifying...';
 
             try {
-                const message = `Zico Rush GameFi\nConnect wallet: ${tempAddress}\nTimestamp: ${Date.now()}`;
+                const message = `Zico Rush GameFi\nVerify: ${tempAddress}\nTime: ${Date.now()}`;
                 const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
                     .map(b => b.toString(16).padStart(2, '0')).join('');
 
+                logDebug("Requesting personal_sign...");
                 const signature = await tempProviderDetails.request({
                     method: 'personal_sign',
                     params: [hexMsg, tempAddress]
                 });
-                console.log('Signed!');
+
+                logDebug("Signature Success: " + signature.slice(0, 10) + "...");
                 onWalletConnectUI(tempAddress);
             } catch (err) {
+                logDebug("Signature Error: " + err.message);
                 alert("Signature failed: " + err.message);
                 if (btnText) btnText.textContent = 'Verify Wallet';
             }
@@ -2042,6 +2085,11 @@
             });
         }
     </script>
+    <!-- Debug Console for Mobile -->
+    <div id="debug-console"
+        style="position:fixed; bottom:0; left:0; width:100%; height:120px; background:rgba(0,0,0,0.85); color:#0f0; font-family:monospace; font-size:10px; overflow-y:auto; z-index:10000; padding:10px; border-top:1px solid #0f0; display:block; pointer-events:none;">
+        <div style="font-weight:bold; border-bottom:1px solid #0f0; margin-bottom:5px;">DEBUG CONSOLE (MMSDK)</div>
+    </div>
 </body>
 
 </html>
