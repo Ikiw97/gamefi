@@ -72,6 +72,13 @@ window.showToast = function (msg, color = '#a855f7', duration = 2000) {
 // ── Submit Score to Backend ───────────────────────────
 window.submitScore = async function (points, level, diamonds) {
     try {
+        // OPTIMISTIC LOCAL UPDATE (berlaku untuk guest dan player offline)
+        let maxLvl = Math.max(parseInt(localStorage.getItem('dr_maxLevel') || '1'), level);
+        localStorage.setItem('dr_maxLevel', maxLvl);
+        localStorage.setItem('dr_currentLevel', level);
+        localStorage.setItem('dr_points', window.gameState.totalPoints);
+        window.gameState.currentLevel = level;
+
         if (!playerSession.wallet || playerSession.wallet === 'guest') return;
 
         // Memanggil Supabase Edge Function untuk submit score
@@ -94,12 +101,15 @@ window.submitScore = async function (points, level, diamonds) {
         if (data && data.success) {
             // Update local storage dengan data yang divalidasi server
             localStorage.setItem('dr_points', data.totalPoints);
-            localStorage.setItem('dr_maxLevel', data.level);
-            localStorage.setItem('dr_currentLevel', data.level); // Sync next level for session
+            
+            // maxLvl checked against server
+            maxLvl = Math.max(maxLvl, data.level);
+            localStorage.setItem('dr_maxLevel', maxLvl);
+            localStorage.setItem('dr_currentLevel', maxLvl); // Sync next level for session
 
             // Update global state
             window.gameState.totalPoints = data.totalPoints;
-            window.gameState.currentLevel = data.level;
+            window.gameState.currentLevel = maxLvl;
             
             window.showToast(`Score saved! +${points} pts`, '#22c55e', 3000);
         } else {
