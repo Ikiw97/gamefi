@@ -47,8 +47,40 @@ async function connectWallet() {
     if (btn) btn.disabled = true;
 
     try {
-        // Use WalletConnect Universal Provider if available (Desktop/General Mobile)
+        // Try injected provider first (MetaMask extension, browser wallets, etc.)
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                if (!accounts || accounts.length === 0) {
+                    throw new Error('No accounts found');
+                }
+
+                const address = accounts[0];
+                const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
+
+                try {
+                    await window.ethereum.request({
+                        method: 'personal_sign',
+                        params: [message, address]
+                    });
+                    console.log('Wallet signed successfully');
+                } catch (signErr) {
+                    console.warn('Sign message rejected or failed:', signErr);
+                    throw new Error('Signature request was rejected. Connection canceled.');
+                }
+
+                handleWalletConnected(address, false);
+                showAlert(alertEl, 'success', '✅ Wallet connected successfully!');
+                return;
+            } catch (injectedErr) {
+                // If injected provider fails, fall back to WalletConnect
+                console.warn('Injected provider error, trying WalletConnect:', injectedErr);
+            }
+        }
+
+        // Fallback to WalletConnect for mobile or if injected provider not available
         if (window.wcProvider) {
+            console.log('Attempting WalletConnect...');
             const session = await window.wcProvider.connect({
                 namespaces: {
                     eip155: {
@@ -65,48 +97,22 @@ async function connectWallet() {
                 }
             });
 
-            if (session) {
-                const eip155Provider = new ethers.BrowserProvider(window.wcProvider);
-                const signer = await eip155Provider.getSigner();
-                const address = await signer.getAddress();
-                if (address) {
+            if (session && session.namespaces && session.namespaces.eip155) {
+                const accounts = session.namespaces.eip155.accounts;
+                if (accounts && accounts.length > 0) {
+                    const address = accounts[0].split(':').pop();
                     handleWalletConnected(address, false);
                     showAlert(alertEl, 'success', '✅ Wallet connected successfully!');
+                    return;
                 }
             }
-            return;
         }
 
-        // Fallback to Injected (MetaMask Extension/App Browser)
-        if (typeof window.ethereum === 'undefined') {
-            const mockAddress = '0x' + Array.from({ length: 40 }, () =>
-                Math.floor(Math.random() * 16).toString(16)).join('');
-            handleWalletConnected(mockAddress, true);
-            showAlert(alertEl, 'info', '⚠️ Wallet not detected. Running in DEMO mode with mock wallet.');
-            return;
-        }
-
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (!accounts || accounts.length === 0) {
-            throw new Error('No accounts found');
-        }
-
-        const address = accounts[0];
-        const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
-
-        try {
-            await window.ethereum.request({
-                method: 'personal_sign',
-                params: [message, address]
-            });
-            console.log('Wallet signed successfully');
-        } catch (signErr) {
-            console.warn('Sign message rejected or failed:', signErr);
-            throw new Error('Signature request was rejected. Connection canceled.');
-        }
-
-        handleWalletConnected(address, false);
-        showAlert(alertEl, 'success', '✅ Wallet connected successfully!');
+        // If no wallet provider is available, show demo mode
+        const mockAddress = '0x' + Array.from({ length: 40 }, () =>
+            Math.floor(Math.random() * 16).toString(16)).join('');
+        handleWalletConnected(mockAddress, true);
+        showAlert(alertEl, 'info', '⚠️ Wallet not detected. Running in DEMO mode with mock wallet.');
 
     } catch (err) {
         console.error('Wallet connect error:', err);
