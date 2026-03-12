@@ -1970,11 +1970,14 @@
                 await window.appKitModal.open();
                 if (btnText) btnText.textContent = 'Awaiting...';
 
-                // Also poll as backup (some AppKit versions don't fire state events)
+                // Also poll as backup (some AppKit versions don't fire state events reliably after OS suspend)
                 let pollCount = 0;
                 const pollCheck = setInterval(() => {
                     pollCount++;
-                    if (window.appKitModal.getIsConnected && window.appKitModal.getIsConnected()) {
+                    const isConn = window.appKitModal.getIsConnectedState ? window.appKitModal.getIsConnectedState() : 
+                                  (window.appKitModal.getIsConnected ? window.appKitModal.getIsConnected() : false);
+                    
+                    if (isConn) {
                         clearInterval(pollCheck);
                         const addr = window.appKitModal.getAddress ? window.appKitModal.getAddress() : null;
                         if (addr && window._onAppKitConnect) {
@@ -1984,8 +1987,10 @@
                     }
                     if (pollCount > 120) { // 2 minutes max
                         clearInterval(pollCheck);
-                        if (btnText) btnText.textContent = 'Connect Wallet';
-                        if (btn) btn.disabled = false;
+                        if (btnText && btnText.textContent === 'Awaiting...') {
+                            btnText.textContent = 'Connect Wallet';
+                            if (btn) btn.disabled = false;
+                        }
                     }
                 }, 1000);
 
