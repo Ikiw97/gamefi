@@ -515,6 +515,8 @@ class GameScene extends Phaser.Scene {
                 } else if (cell === 5) {
                     // Door (locked)
                     this.doorItem = this.add.image(x, y, 'door_locked');
+                    this.doorItem.setDisplaySize(this.TILE, this.TILE); // scale to match tile
+                    this.doorItem.setDepth(2);
                     this.doorItem.setData({ col: c, row: r });
                     this.doorCol = c;
                     this.doorRow = r;
