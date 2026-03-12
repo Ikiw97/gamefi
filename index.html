@@ -1737,7 +1737,10 @@
             document.getElementById('regCaptchaA').className = 'reg-input';
             document.getElementById('regSubmitBtn').disabled = true;
             document.getElementById('regMsg').className = 'reg-msg';
+            document.getElementById('regMsg').textContent = '';
             document.getElementById('regModal').classList.add('open');
+            _isUnameTaken = false;
+            if (_unameCheckTimeout) clearTimeout(_unameCheckTimeout);
 
             // Wire live validation
             document.getElementById('regUsername').oninput = validateRegForm;
@@ -1747,18 +1750,65 @@
             };
         }
 
+        let _unameCheckTimeout = null;
+        let _isUnameTaken = false;
+
         function validateRegForm() {
             const uname = document.getElementById('regUsername').value.trim();
             const cap = parseInt(document.getElementById('regCaptchaA').value);
-            const unameOk = /^[a-zA-Z0-9_]{3, 20}$/.test(uname);
+            const unameOk = /^[a-zA-Z0-9_]{3,20}$/.test(uname);
             const capOk = cap === _capAns;
 
             const unameEl = document.getElementById('regUsername');
             const capEl = document.getElementById('regCaptchaA');
+            const msgEl = document.getElementById('regMsg');
+
             unameEl.className = 'reg-input' + (uname.length > 0 ? (unameOk ? ' ok' : ' err') : '');
             capEl.className = 'reg-input' + (capEl.value.length > 0 ? (capOk ? ' ok' : ' err') : '');
 
-            document.getElementById('regSubmitBtn').disabled = !(unameOk && capOk);
+            document.getElementById('regSubmitBtn').disabled = !(unameOk && capOk && !_isUnameTaken);
+
+            // Hide the error message if the username is cleared or doesn't meet the format
+            if (!unameOk) {
+                _isUnameTaken = false;
+                if (msgEl.textContent.includes('terpakai')) {
+                    msgEl.textContent = '';
+                    msgEl.className = 'reg-msg';
+                }
+                return;
+            }
+
+            // Debounced DB check
+            if (_unameCheckTimeout) clearTimeout(_unameCheckTimeout);
+            
+            _unameCheckTimeout = setTimeout(async () => {
+                try {
+                    // Check if another user has this name
+                    const { data, error } = await supabaseClient
+                        .from('profiles')
+                        .select('username')
+                        .ilike('username', uname)
+                        .limit(1);
+
+                    if (data && data.length > 0) {
+                        _isUnameTaken = true;
+                        unameEl.className = 'reg-input err';
+                        msgEl.textContent = '❌ Username sudah terpakai!';
+                        msgEl.className = 'reg-msg err';
+                        document.getElementById('regSubmitBtn').disabled = true;
+                    } else {
+                        _isUnameTaken = false;
+                        if (msgEl.textContent.includes('terpakai')) {
+                            msgEl.textContent = '';
+                            msgEl.className = 'reg-msg';
+                        }
+                        // Re-evaluate button state
+                        document.getElementById('regSubmitBtn').disabled = !capOk;
+                    }
+                } catch (e) {
+                    console.error('Username check error:', e);
+                }
+            }, 600); // 600ms delay after typing
         }
 
         // ── Submit registration ──
