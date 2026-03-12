@@ -21,19 +21,29 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <!-- WalletConnect dependencies -->
-    <script src="https://unpkg.com/@web3modal/standalone@2.4.3/dist/index.umd.js"></script>
-    <script src="https://unpkg.com/@walletconnect/universal-provider@2.10.4/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/@walletconnect/universal-provider@2.13.1/dist/index.umd.js" defer></script>
     <script>
-        // Defensive shims for UniversalProvider UMD bugs
-        if (!window.Web3Modal) {
-            window.Web3Modal = { Web3Modal: class { constructor() { } openModal() { } closeModal() { } } };
-        }
         window.wcProvider = null;
+        window.wcProjectId = '20f947d147b6150ebcb5510766f823dd';
+
         async function initWalletConnect() {
             try {
-                const projectId = '20f947d147b6150ebcb5510766f823dd';
-                window.wcProvider = await window.UniversalProvider.UniversalProvider.init({
-                    projectId,
+                // Wait for UniversalProvider to be available (loaded by defer script)
+                if (!window.UniversalProvider) {
+                    console.warn("UniversalProvider not loaded yet, retrying...");
+                    setTimeout(initWalletConnect, 100);
+                    return;
+                }
+
+                // Access the correct export path
+                const UniversalProvider = window.UniversalProvider.default || window.UniversalProvider;
+                if (!UniversalProvider || !UniversalProvider.init) {
+                    console.warn("UniversalProvider.init not available");
+                    return;
+                }
+
+                window.wcProvider = await UniversalProvider.init({
+                    projectId: window.wcProjectId,
                     metadata: {
                         name: 'Zico Rush',
                         description: 'GameFi Airdrop App',
@@ -48,7 +58,13 @@
                 console.warn("WalletConnect init error:", err);
             }
         }
-        initWalletConnect();
+
+        // Initialize when DOM is ready and libraries are loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initWalletConnect);
+        } else {
+            setTimeout(initWalletConnect, 500);
+        }
     </script>
     <style>
         /* ───── NAVBAR ───── */
