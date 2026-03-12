@@ -843,6 +843,9 @@
         ───────────────────────────────────── */
 
         function initMenu() {
+            // Ensure mobile controls are hidden on the menu
+            document.getElementById('mobileControls').style.display = 'none';
+
             const username = localStorage.getItem('dr_username') || 'Player';
             const wallet = localStorage.getItem('dr_wallet') || '';
             const points = parseInt(localStorage.getItem('dr_points') || '0');
