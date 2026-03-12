@@ -1868,9 +1868,22 @@
             logDebug("connectWallet() triggered (AppKit)");
             const btnText = document.getElementById('connectBtnText');
 
+            // If not ready, wait up to 3 seconds before giving up
             if (!window.appKitModal) {
-                logDebug("AppKit Modal not initialized!");
-                alert("Wallet system starting... Please try again.");
+                logDebug("AppKit not ready, waiting...");
+                if (btnText) btnText.textContent = 'Starting...';
+
+                for (let i = 0; i < 6; i++) {
+                    await new Promise(r => setTimeout(r, 500));
+                    if (window.appKitModal) break;
+                }
+            }
+
+            if (!window.appKitModal) {
+                logDebug("AppKit Modal STILL not initialized after wait!");
+                let errorMsg = window.appKitInitError || "Connection error. Please refresh the page.";
+                alert("Wallet system failed to start: " + errorMsg);
+                if (btnText) btnText.textContent = 'Connect Wallet';
                 return;
             }
 
