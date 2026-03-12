@@ -1,13 +1,25 @@
 // js/appkit-init.js
-// Specialized for Vanilla JS using the official AppKit CDN bundle
+// Optimized for Vanilla JS with confirmed CDN exports
 
 async function initAppKit() {
-    console.log("[AppKit] Initializing via official CDN bundle...");
+    console.log("[AppKit] Starting initialization...");
     try {
-        // Import from the official bundled CDN
-        const { createAppKit, EthersAdapter } = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.1.0/dist/appkit.js');
+        // Use esm.sh with bundle flag to ensure all dependencies are included and correctly resolved
+        const moduleUrl = 'https://esm.sh/@reown/appkit-cdn@1.1.9?bundle';
+        console.log("[AppKit] Importing from:", moduleUrl);
 
-        const projectId = '341d7237e29683794770289a8cf6164d'; // Reown Demo Project ID
+        const AppKitModule = await import(moduleUrl);
+
+        // Defensive check for exports (some versions might have different structures)
+        const createAppKit = AppKitModule.createAppKit || AppKitModule.default?.createAppKit;
+        const EthersAdapter = AppKitModule.EthersAdapter || AppKitModule.default?.EthersAdapter;
+
+        if (!createAppKit || !EthersAdapter) {
+            console.error("[AppKit] Module exports missing:", AppKitModule);
+            throw new Error("createAppKit or EthersAdapter not found in module");
+        }
+
+        const projectId = '341d7237e29683794770289a8cf6164d'; // Reown Demo ID
 
         const base = {
             chainId: 8453,
@@ -35,25 +47,24 @@ async function initAppKit() {
         });
 
         window.appKitModal = modal;
-        console.log("[AppKit] Modal initialized successfully via bundle!");
         window.appKitReady = true;
+        console.log("[AppKit] Successfully initialized!");
 
     } catch (error) {
-        console.error("[AppKit] Bundle Loading Error:", error);
+        console.error("[AppKit] Initialization failed:", error);
         window.appKitInitError = error.message;
 
-        // Final fallback if the bundle URL is wrong/offline
-        let errorHint = "Please check your internet connection or try again.";
-        if (error.message.includes("AccountController")) {
-            errorHint = "System version mismatch. Please clear browser cache and refresh.";
+        let errorMsg = error.message;
+        if (errorMsg.includes("AccountController")) {
+            errorMsg = "System version mismatch. Please clear cache and refresh.";
         }
 
-        const div = document.createElement('div');
-        div.style.cssText = 'position:fixed;bottom:10px;right:10px;background:rgba(255,0,0,0.9);color:white;padding:12px;z-index:9999;font-size:12px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.5);border:1px solid white;';
-        div.innerHTML = `<b>AppKit Error:</b><br>${error.message}<br><small>${errorHint}</small>`;
-        document.body.appendChild(div);
+        const debugDiv = document.createElement('div');
+        debugDiv.style.cssText = 'position:fixed;bottom:20px;left:20px;right:20px;background:rgba(220,38,38,0.95);color:white;padding:15px;z-index:99999;font-size:12px;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.5);font-family:monospace;';
+        debugDiv.innerHTML = `<strong>AppKit Init Error:</strong><br>${errorMsg}<br><br><small>Details: ${error.stack?.split('\n')[0]}</small>`;
+        document.body.appendChild(debugDiv);
     }
 }
 
-// Start initialization
+// Kick off
 initAppKit();
