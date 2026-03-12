@@ -47,19 +47,30 @@ async function connectWallet() {
     if (btn) btn.disabled = true;
 
     try {
-        // Check for injected provider (MetaMask, Trust Wallet, etc.)
+        let providerDetails = null;
+
+        // 1. Injected Provider
         if (typeof window.ethereum !== 'undefined') {
-            console.log('Detected injected ethereum provider');
+            providerDetails = window.ethereum;
+        }
+        // 2. Fallback to MetaMask SDK (Mobile Chrome/Safari)
+        else if (window.mmsdk) {
+            console.log('Using MetaMask SDK for fallback');
+            await window.mmsdk.connect();
+            providerDetails = window.mmProvider;
+        }
 
+        if (providerDetails) {
             try {
-                // Request accounts from the user's wallet
-                const accounts = await window.ethereum.request({
-                    method: 'eth_requestAccounts'
-                });
-
-                if (!accounts || accounts.length === 0) {
-                    throw new Error('No accounts found');
+                // Request accounts
+                let accounts;
+                if (providerDetails === window.ethereum) {
+                    accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                } else {
+                    accounts = await providerDetails.request({ method: 'eth_requestAccounts' });
                 }
+
+                if (!accounts || accounts.length === 0) throw new Error('No accounts found');
 
                 const address = accounts[0];
                 console.log('Got address:', address);
@@ -68,23 +79,30 @@ async function connectWallet() {
                 const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
 
                 try {
-                    const signature = await window.ethereum.request({
-                        method: 'personal_sign',
-                        params: [message, address]
-                    });
+                    let signature;
+                    if (providerDetails === window.ethereum) {
+                        signature = await window.ethereum.request({
+                            method: 'personal_sign',
+                            params: [message, address]
+                        });
+                    } else {
+                        signature = await providerDetails.request({
+                            method: 'personal_sign',
+                            params: [message, address]
+                        });
+                    }
                     console.log('Wallet signed successfully:', signature);
                 } catch (signErr) {
                     console.warn('Sign message rejected or failed:', signErr);
                     throw new Error('Signature request was rejected. Connection canceled.');
                 }
 
-                // Success! Connection established
+                // Success!
                 handleWalletConnected(address, false);
                 showAlert(alertEl, 'success', '✅ Wallet connected successfully!');
                 return;
-
             } catch (err) {
-                console.error('Injected provider error:', err);
+                console.error('Provider connection error:', err);
                 const msg = err.message || 'Failed to connect wallet';
                 showAlert(alertEl, 'error', `❌ ${msg}`);
                 if (btn) btn.disabled = false;
@@ -92,7 +110,7 @@ async function connectWallet() {
             }
         }
 
-        // No wallet detected
+        // 3. Demo Mode Fallback
         console.warn('No wallet detected - using demo mode');
         const mockAddress = '0x' + Array.from({ length: 40 }, () =>
             Math.floor(Math.random() * 16).toString(16)).join('');
@@ -219,8 +237,8 @@ function clearWalletData() {
     localStorage.removeItem('dr_referralCode');
     localStorage.removeItem('dr_points');
 
-    if (window.wcProvider && window.wcProvider.session) {
-        window.wcProvider.disconnect().catch(e => console.warn("Disconnect error:", e));
+    if (window.mmsdk) {
+        window.mmsdk.disconnect();
     }
 
     window.walletState.connected = false;
