@@ -36,11 +36,8 @@
             window.LOG_BUFFER.push("[ERR] " + args.join(" "));
             if (window.LOG_BUFFER.length > 20) window.LOG_BUFFER.shift();
             originalError.apply(console, args);
-        };
-    </script>
-
-    <!-- Web3Modal & WalletConnect v2 (Standalone UMD for Mobile Stability) -->
-    <script src="https://unpkg.com/@walletconnect/modal@2.6.2/dist/index.umd.js"></script>
+            <!-- Web3Modal & WalletConnect v2 (Standalone UMD for Mobile Stability) -->
+            <script src="https://unpkg.com/@web3modal/standalone@2.4.3/dist/index.umd.js"></script>
     <script src="https://unpkg.com/@walletconnect/universal-provider@2.10.4/dist/index.umd.js"></script>
     <script>
         window.wcProvider = null;
@@ -51,43 +48,43 @@
             try {
                 const projectId = '20f947d147b6150ebcb5510766f823dd';
 
-                // Initialize Web3Modal
-                window.wcModal = new window.web3modal.WalletConnectModal({
-                    projectId,
-                    chains: ['eip155:1'], // Mainnet only
-                    themeMode: 'dark',
-                    themeVariables: {
-                        '--wcm-z-index': 9999
+        // Initialize Web3Modal Standalone
+        window.wcModal = new window.Web3Modal.Web3Modal({
+            projectId,
+            walletConnectVersion: 2,
+        themeMode: 'dark',
+        themeVariables: {
+            '--w3m-z-index': '9999'
                     }
                 });
 
-                // Initialize Universal Provider
-                window.wcProvider = await window.UniversalProvider.UniversalProvider.init({
-                    projectId,
-                    metadata: {
-                        name: 'Zico Rush',
-                        description: 'GameFi Airdrop App',
-                        url: window.location.origin,
-                        icons: [window.location.origin + '/assets/icons/icon-192.png']
+        // Initialize Universal Provider
+        window.wcProvider = await window.UniversalProvider.UniversalProvider.init({
+            projectId,
+            metadata: {
+            name: 'Zico Rush',
+        description: 'GameFi Airdrop App',
+        url: window.location.origin,
+        icons: [window.location.origin + '/assets/icons/icon-192.png']
                     }
                 });
 
-                console.log("WalletConnect v2 Initialized Successfully");
+        console.log("WalletConnect v2 Initialized Successfully");
 
                 window.wcProvider.on("display_uri", (uri) => {
-                    window.wcModal.openModal({ uri });
+            window.wcModal.openModal({ uri });
                 });
 
                 window.wcProvider.on("session_delete", () => {
-                    console.log("WalletConnect Session Deleted");
-                    if (window.walletState && window.walletState.connected) {
+            console.log("WalletConnect Session Deleted");
+        if (window.walletState && window.walletState.connected) {
                         if (typeof clearWalletData === 'function') clearWalletData();
                     }
                 });
 
             } catch (err) {
-                console.error("WalletConnect setup error:", err);
-                window.appKitInitError = "WalletConnect failed to load: " + err.message;
+            console.error("WalletConnect setup error:", err);
+        window.appKitInitError = "WalletConnect failed to load: " + err.message;
             }
         }
 
@@ -1434,14 +1431,14 @@
     <script>
         for (let i = 0; i < 15; i++) {
             const g = document.createElement('div');
-            g.className = 'floating-gem';
-            g.style.left = Math.random() * 100 + 'vw';
-            g.style.top = Math.random() * 100 + 'vh';
-            g.style.animationDelay = (Math.random() * 5) + 's';
-            g.style.animationDuration = (4 + Math.random() * 4) + 's';
-            const colors = ['#4fc3f7', '#a855f7', '#f59e0b', '#22c55e'];
-            g.style.background = `radial-gradient(circle at 30% 30%, #fff, ${colors[Math.floor(Math.random() * colors.length)]})`;
-            document.body.appendChild(g);
+        g.className = 'floating-gem';
+        g.style.left = Math.random() * 100 + 'vw';
+        g.style.top = Math.random() * 100 + 'vh';
+        g.style.animationDelay = (Math.random() * 5) + 's';
+        g.style.animationDuration = (4 + Math.random() * 4) + 's';
+        const colors = ['#4fc3f7', '#a855f7', '#f59e0b', '#22c55e'];
+        g.style.background = `radial-gradient(circle at 30% 30%, #fff, ${colors[Math.floor(Math.random() * colors.length)]})`;
+        document.body.appendChild(g);
         }
     </script>
 
@@ -1623,8 +1620,8 @@
         // ── State ──
         window.walletState = {
             connected: false,
-            wallet: null,
-            username: localStorage.getItem('dr_username') || null
+        wallet: null,
+        username: localStorage.getItem('dr_username') || null
         };
         const playerState = window.walletState; // For backward compatibility in this file
 
@@ -1633,30 +1630,30 @@
 
         function initCaptcha() {
             _capA = Math.floor(Math.random() * 14) + 1;
-            _capB = Math.floor(Math.random() * 14) + 1;
-            _capAns = _capA + _capB;
-            document.getElementById('regCaptchaQ').textContent = `${_capA} + ${_capB} = ?`;
+        _capB = Math.floor(Math.random() * 14) + 1;
+        _capAns = _capA + _capB;
+        document.getElementById('regCaptchaQ').textContent = `${_capA} + ${_capB} = ?`;
         }
 
         // ── Update nav wallet badge ──
         function updateNavBadge(wallet) {
             const navBtn = document.getElementById('navWalletBtn');
-            const navText = document.getElementById('navWalletText');
-            if (!navBtn) return;
-            if (wallet) {
-                navBtn.style.background = 'rgba(34,197,94,0.1)';
-                navBtn.style.borderColor = 'rgba(34,197,94,0.4)';
-                navBtn.style.color = '#22c55e';
-                const dot = navBtn.querySelector('.dot');
-                if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 8px #22c55e'; }
-                if (navText) navText.textContent = wallet.slice(0, 6) + '...' + wallet.slice(-4);
+        const navText = document.getElementById('navWalletText');
+        if (!navBtn) return;
+        if (wallet) {
+            navBtn.style.background = 'rgba(34,197,94,0.1)';
+        navBtn.style.borderColor = 'rgba(34,197,94,0.4)';
+        navBtn.style.color = '#22c55e';
+        const dot = navBtn.querySelector('.dot');
+        if (dot) {dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 8px #22c55e'; }
+        if (navText) navText.textContent = wallet.slice(0, 6) + '...' + wallet.slice(-4);
             } else {
-                navBtn.style.background = 'rgba(239,68,68,0.1)';
-                navBtn.style.borderColor = 'rgba(239,68,68,0.4)';
-                navBtn.style.color = '#ef4444';
-                const dot = navBtn.querySelector('.dot');
-                if (dot) { dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 8px #ef4444'; }
-                if (navText) navText.textContent = 'Connect';
+            navBtn.style.background = 'rgba(239,68,68,0.1)';
+        navBtn.style.borderColor = 'rgba(239,68,68,0.4)';
+        navBtn.style.color = '#ef4444';
+        const dot = navBtn.querySelector('.dot');
+        if (dot) {dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 8px #ef4444'; }
+        if (navText) navText.textContent = 'Connect';
             }
         }
 
@@ -1664,88 +1661,88 @@
         async function loadGlobalStats() {
             try {
                 // Fetch stats from Supabase directly
-                const { data, error, count } = await supabaseClient
-                    .from('profiles')
-                    .select('points, diamonds_collected', { count: 'exact' });
+                const {data, error, count} = await supabaseClient
+        .from('profiles')
+        .select('points, diamonds_collected', {count: 'exact' });
 
-                if (error) throw error;
+        if (error) throw error;
 
-                let totalPoints = 0;
-                let totalDiamonds = 0;
+        let totalPoints = 0;
+        let totalDiamonds = 0;
 
                 data.forEach(p => {
-                    totalPoints += (p.points || 0);
-                    totalDiamonds += (p.diamonds_collected || 0);
+            totalPoints += (p.points || 0);
+        totalDiamonds += (p.diamonds_collected || 0);
                 });
 
                 // Format numbers helper (1234 -> 1.2K)
                 const fmt = (num) => {
                     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
                     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-                    return num.toLocaleString();
+        return num.toLocaleString();
                 };
 
-                document.getElementById('stat-players').textContent = (count || 0).toLocaleString();
-                document.getElementById('stat-coins').textContent = fmt(totalDiamonds); // Diamonds are mined
-                document.getElementById('stat-points').textContent = fmt(totalPoints);
-                document.getElementById('stat-season').textContent = 'S1';
+        document.getElementById('stat-players').textContent = (count || 0).toLocaleString();
+        document.getElementById('stat-coins').textContent = fmt(totalDiamonds); // Diamonds are mined
+        document.getElementById('stat-points').textContent = fmt(totalPoints);
+        document.getElementById('stat-season').textContent = 'S1';
 
             } catch (err) {
-                console.warn('Failed to load global stats:', err);
+            console.warn('Failed to load global stats:', err);
             }
         }
 
         // ── Update progress steps UI ──
         function updateProgressSteps() {
             const hasWallet = !!playerState.wallet;
-            const hasUser = !!localStorage.getItem('dr_username');
+        const hasUser = !!localStorage.getItem('dr_username');
 
-            // 1. Wallet
-            const s1 = document.getElementById('step-wallet');
-            if (s1) {
+        // 1. Wallet
+        const s1 = document.getElementById('step-wallet');
+        if (s1) {
                 if (hasWallet) {
-                    s1.classList.add('done');
-                    s1.querySelector('.step-box').textContent = '✓';
+            s1.classList.add('done');
+        s1.querySelector('.step-box').textContent = '✓';
                 } else {
-                    s1.classList.remove('done');
-                    s1.querySelector('.step-box').textContent = '1';
+            s1.classList.remove('done');
+        s1.querySelector('.step-box').textContent = '1';
                 }
             }
 
-            // 2. Profile
-            const s2 = document.getElementById('step-profile');
-            if (s2) {
+        // 2. Profile
+        const s2 = document.getElementById('step-profile');
+        if (s2) {
                 if (hasUser) {
-                    s2.classList.add('done');
-                    s2.querySelector('.step-box').textContent = '✓';
+            s2.classList.add('done');
+        s2.querySelector('.step-box').textContent = '✓';
                 } else {
-                    s2.classList.remove('done');
-                    s2.querySelector('.step-box').textContent = '2';
+            s2.classList.remove('done');
+        s2.querySelector('.step-box').textContent = '2';
                 }
             }
 
-            // 3. Verify (Auto-done if profile exists for now)
-            const s3 = document.getElementById('step-verify');
-            if (s3) {
+        // 3. Verify (Auto-done if profile exists for now)
+        const s3 = document.getElementById('step-verify');
+        if (s3) {
                 if (hasUser) {
-                    s3.classList.add('done');
-                    s3.querySelector('.step-box').textContent = '✓';
+            s3.classList.add('done');
+        s3.querySelector('.step-box').textContent = '✓';
                 } else {
-                    s3.classList.remove('done');
-                    s3.querySelector('.step-box').textContent = '3';
+            s3.classList.remove('done');
+        s3.querySelector('.step-box').textContent = '3';
                 }
             }
 
-            // 4. Play (Shows check if ready)
-            const s4 = document.getElementById('step-play');
-            if (s4) {
+        // 4. Play (Shows check if ready)
+        const s4 = document.getElementById('step-play');
+        if (s4) {
                 if (hasUser) {
-                    s4.classList.add('done');
-                    s4.querySelector('.step-box').textContent = '✓';
-                    s4.querySelector('.step-box').style.color = '';
+            s4.classList.add('done');
+        s4.querySelector('.step-box').textContent = '✓';
+        s4.querySelector('.step-box').style.color = '';
                 } else {
-                    s4.classList.remove('done');
-                    s4.querySelector('.step-box').textContent = '4';
+            s4.classList.remove('done');
+        s4.querySelector('.step-box').textContent = '4';
                 }
             }
         }
@@ -1753,143 +1750,143 @@
         // ── Update connect button UI ──
         function setConnectBtnConnected(wallet) {
             const shortW = wallet.slice(0, 6) + '...' + wallet.slice(-4);
-            const btn = document.getElementById('mainConnectBtn');
-            const btnText = document.getElementById('connectBtnText');
-            const disp = document.getElementById('mainWalletDisplay');
+        const btn = document.getElementById('mainConnectBtn');
+        const btnText = document.getElementById('connectBtnText');
+        const disp = document.getElementById('mainWalletDisplay');
 
-            if (btn) btn.style.display = 'flex';
-            if (btnText) btnText.textContent = shortW || 'Wallet Connected';
+        if (btn) btn.style.display = 'flex';
+        if (btnText) btnText.textContent = shortW || 'Wallet Connected';
 
-            // Highlight button as connected
-            if (btn) btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+        // Highlight button as connected
+        if (btn) btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
 
-            // Hide the separate display element to avoid redundancy
-            if (disp) disp.style.display = 'none';
+        // Hide the separate display element to avoid redundancy
+        if (disp) disp.style.display = 'none';
 
-            // Show referral code
-            const refCode = localStorage.getItem('dr_referralCode');
-            const refEl = document.getElementById('displayReferral');
-            if (refEl) {
-                refEl.value = refCode ? refCode : 'NO CODE';
+        // Show referral code
+        const refCode = localStorage.getItem('dr_referralCode');
+        const refEl = document.getElementById('displayReferral');
+        if (refEl) {
+            refEl.value = refCode ? refCode : 'NO CODE';
             }
         }
 
         // ── Open registration modal ──
         function openRegModal(wallet) {
             document.getElementById('regWalletSub').textContent =
-                wallet.slice(0, 6) + '...' + wallet.slice(-4) + ' – Fill in details to create your account.';
-            initCaptcha();
-            // Reset form
-            document.getElementById('regUsername').value = '';
-            document.getElementById('regUsername').className = 'reg-input';
-            document.getElementById('regReferral').value = '';
-            document.getElementById('regCaptchaA').value = '';
-            document.getElementById('regCaptchaA').className = 'reg-input';
-            document.getElementById('regSubmitBtn').disabled = true;
-            document.getElementById('regMsg').className = 'reg-msg';
-            document.getElementById('regModal').classList.add('open');
+            wallet.slice(0, 6) + '...' + wallet.slice(-4) + ' – Fill in details to create your account.';
+        initCaptcha();
+        // Reset form
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regUsername').className = 'reg-input';
+        document.getElementById('regReferral').value = '';
+        document.getElementById('regCaptchaA').value = '';
+        document.getElementById('regCaptchaA').className = 'reg-input';
+        document.getElementById('regSubmitBtn').disabled = true;
+        document.getElementById('regMsg').className = 'reg-msg';
+        document.getElementById('regModal').classList.add('open');
 
-            // Wire live validation
-            document.getElementById('regUsername').oninput = validateRegForm;
-            document.getElementById('regCaptchaA').oninput = validateRegForm;
-            document.getElementById('regReferral').oninput = function () {
-                this.value = this.value.toUpperCase();
+        // Wire live validation
+        document.getElementById('regUsername').oninput = validateRegForm;
+        document.getElementById('regCaptchaA').oninput = validateRegForm;
+        document.getElementById('regReferral').oninput = function () {
+            this.value = this.value.toUpperCase();
             };
         }
 
         function validateRegForm() {
             const uname = document.getElementById('regUsername').value.trim();
-            const cap = parseInt(document.getElementById('regCaptchaA').value);
-            const unameOk = /^[a-zA-Z0-9_]{3, 20}$/.test(uname);
-            const capOk = cap === _capAns;
+        const cap = parseInt(document.getElementById('regCaptchaA').value);
+        const unameOk = /^[a-zA-Z0-9_]{3, 20}$/.test(uname);
+        const capOk = cap === _capAns;
 
-            const unameEl = document.getElementById('regUsername');
-            const capEl = document.getElementById('regCaptchaA');
+        const unameEl = document.getElementById('regUsername');
+        const capEl = document.getElementById('regCaptchaA');
             unameEl.className = 'reg-input' + (uname.length > 0 ? (unameOk ? ' ok' : ' err') : '');
             capEl.className = 'reg-input' + (capEl.value.length > 0 ? (capOk ? ' ok' : ' err') : '');
 
-            document.getElementById('regSubmitBtn').disabled = !(unameOk && capOk);
+        document.getElementById('regSubmitBtn').disabled = !(unameOk && capOk);
         }
 
         // ── Submit registration ──
         async function submitRegistration() {
             const wallet = playerState.wallet;
-            const username = document.getElementById('regUsername').value.trim();
-            const referral = document.getElementById('regReferral').value.trim();
-            const msgEl = document.getElementById('regMsg');
-            const btn = document.getElementById('regSubmitBtn');
+        const username = document.getElementById('regUsername').value.trim();
+        const referral = document.getElementById('regReferral').value.trim();
+        const msgEl = document.getElementById('regMsg');
+        const btn = document.getElementById('regSubmitBtn');
 
-            btn.disabled = true;
-            btn.textContent = '⏳ Registering...';
-            msgEl.className = 'reg-msg';
+        btn.disabled = true;
+        btn.textContent = '⏳ Registering...';
+        msgEl.className = 'reg-msg';
 
-            try {
+        try {
                 // Generate a simple referral code for this user
                 const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                let refCode = username.slice(0, 3).toUpperCase();
-                for (let i = refCode.length; i < 6; i++) {
-                    refCode += chars[Math.floor(Math.random() * chars.length)];
+        let refCode = username.slice(0, 3).toUpperCase();
+        for (let i = refCode.length; i < 6; i++) {
+            refCode += chars[Math.floor(Math.random() * chars.length)];
                 }
 
-                // Insert into Supabase
-                const { data, error } = await supabaseClient
-                    .from('profiles')
-                    .insert([
-                        {
-                            wallet: wallet.toLowerCase(),
-                            username: username,
-                            referral_code: refCode,
-                            referred_by: referral ? referral.toUpperCase() : null,
-                            points: referral ? 25 : 0 // give 25 bonus pts if they use a code
+        // Insert into Supabase
+        const {data, error} = await supabaseClient
+        .from('profiles')
+        .insert([
+        {
+            wallet: wallet.toLowerCase(),
+        username: username,
+        referral_code: refCode,
+        referred_by: referral ? referral.toUpperCase() : null,
+        points: referral ? 25 : 0 // give 25 bonus pts if they use a code
                         }
-                    ])
-                    .select()
-                    .single();
+        ])
+        .select()
+        .single();
 
-                if (error) {
+        if (error) {
                     if (error.code === '23505') throw new Error('Username or wallet already registered');
-                    throw error;
+        throw error;
                 }
 
-                if (referral) {
+        if (referral) {
                     // Find referrer by code
-                    const { data: referrerData } = await window.supabaseClient
-                        .from('profiles')
-                        .select('wallet, points, referral_count')
-                        .eq('referral_code', referral.toUpperCase())
-                        .single();
+                    const {data: referrerData } = await window.supabaseClient
+        .from('profiles')
+        .select('wallet, points, referral_count')
+        .eq('referral_code', referral.toUpperCase())
+        .single();
 
-                    if (referrerData) {
-                        // Reward referrer: +50 points, +1 referral count
-                        await window.supabaseClient
-                            .from('profiles')
-                            .update({
-                                points: (referrerData.points || 0) + 50,
-                                referral_count: (referrerData.referral_count || 0) + 1
-                            })
-                            .eq('wallet', referrerData.wallet);
+        if (referrerData) {
+            // Reward referrer: +50 points, +1 referral count
+            await window.supabaseClient
+                .from('profiles')
+                .update({
+                    points: (referrerData.points || 0) + 50,
+                    referral_count: (referrerData.referral_count || 0) + 1
+                })
+                .eq('wallet', referrerData.wallet);
                     }
                 }
 
-                // Save player data
-                localStorage.setItem('dr_wallet', wallet.toLowerCase());
-                localStorage.setItem('dr_username', data.username);
-                localStorage.setItem('dr_referralCode', data.referral_code || '');
-                localStorage.setItem('dr_points', data.points || 0);
-                localStorage.setItem('dr_currentLevel', data.level || 1);
+        // Save player data
+        localStorage.setItem('dr_wallet', wallet.toLowerCase());
+        localStorage.setItem('dr_username', data.username);
+        localStorage.setItem('dr_referralCode', data.referral_code || '');
+        localStorage.setItem('dr_points', data.points || 0);
+        localStorage.setItem('dr_currentLevel', data.level || 1);
 
-                msgEl.textContent = '✅ Account created! Redirecting to game...';
-                msgEl.className = 'reg-msg ok';
+        msgEl.textContent = '✅ Account created! Redirecting to game...';
+        msgEl.className = 'reg-msg ok';
 
                 setTimeout(() => {
-                    window.location.href = 'game.html?v=' + Date.now();
+            window.location.href = 'game.html?v=' + Date.now();
                 }, 1200);
 
             } catch (err) {
-                msgEl.textContent = '❌ ' + (err.message || 'Registration failed. Try again.');
-                msgEl.className = 'reg-msg err';
-                btn.disabled = false;
-                btn.textContent = '🎮 START PLAYING';
+            msgEl.textContent = '❌ ' + (err.message || 'Registration failed. Try again.');
+        msgEl.className = 'reg-msg err';
+        btn.disabled = false;
+        btn.textContent = '🎮 START PLAYING';
             }
         }
 
@@ -1899,83 +1896,83 @@
             if (playerState.connected || playerState.wallet) {
                 if (confirm('Disconnect wallet?')) {
                     if (window.appKitModal) window.appKitModal.disconnect();
-                    localStorage.removeItem('dr_wallet');
-                    localStorage.removeItem('dr_username');
-                    localStorage.removeItem('dr_referralCode');
-                    localStorage.removeItem('dr_points');
-                    localStorage.removeItem('dr_currentLevel');
-                    location.reload();
+        localStorage.removeItem('dr_wallet');
+        localStorage.removeItem('dr_username');
+        localStorage.removeItem('dr_referralCode');
+        localStorage.removeItem('dr_points');
+        localStorage.removeItem('dr_currentLevel');
+        location.reload();
                 }
-                return;
+        return;
             }
 
-            // 1. Prioritize already injected provider (MetaMask app browser / Extension)
-            if (window.ethereum) {
+        // 1. Prioritize already injected provider (MetaMask app browser / Extension)
+        if (window.ethereum) {
                 try {
                     const provider = new ethers.BrowserProvider(window.ethereum);
-                    const accounts = await provider.send('eth_requestAccounts', []);
+        const accounts = await provider.send('eth_requestAccounts', []);
                     if (accounts && accounts.length > 0) return onWalletConnectUI(accounts[0]);
                 } catch (err) {
-                    console.warn("Direct connection attempt failed, falling back to WalletConnect:", err.message);
+            console.warn("Direct connection attempt failed, falling back to WalletConnect:", err.message);
                 }
             }
 
-            // 2. Fallback to WalletConnect v2 for standard mobile browsers
-            const btnText = document.getElementById('connectBtnText');
-            if (btnText) btnText.textContent = 'Connecting...';
+        // 2. Fallback to WalletConnect v2 for standard mobile browsers
+        const btnText = document.getElementById('connectBtnText');
+        if (btnText) btnText.textContent = 'Connecting...';
 
-            if (window.appKitInitError) {
-                let msg = 'Connection system failed to load.\n\nError: ' + window.appKitInitError;
-                msg += '\n\nPlease check your internet connection and try refreshing the page.';
-                alert(msg);
-                if (btnText) btnText.textContent = 'Connect Wallet';
-                return;
+        if (window.appKitInitError) {
+            let msg = 'Connection system failed to load.\n\nError: ' + window.appKitInitError;
+        msg += '\n\nPlease check your internet connection and try refreshing the page.';
+        alert(msg);
+        if (btnText) btnText.textContent = 'Connect Wallet';
+        return;
             }
 
-            try {
+        try {
                 if (!window.wcProvider) {
                     throw new Error("WalletConnect Provider not initialized.");
                 }
 
-                // Connect universal provider which opens the modal via the "display_uri" event
-                const session = await window.wcProvider.connect({
-                    namespaces: {
-                        eip155: {
-                            methods: [
-                                "eth_sendTransaction",
-                                "eth_signTransaction",
-                                "eth_sign",
-                                "personal_sign",
-                                "eth_signTypedData",
-                            ],
-                            chains: ["eip155:1"],
-                            events: ["chainChanged", "accountsChanged"],
-                            rpcMap: {
-                                1: "https://cloudflare-eth.com"
+        // Connect universal provider which opens the modal via the "display_uri" event
+        const session = await window.wcProvider.connect({
+            namespaces: {
+            eip155: {
+            methods: [
+        "eth_sendTransaction",
+        "eth_signTransaction",
+        "eth_sign",
+        "personal_sign",
+        "eth_signTypedData",
+        ],
+        chains: ["eip155:1"],
+        events: ["chainChanged", "accountsChanged"],
+        rpcMap: {
+            1: "https://cloudflare-eth.com"
                             }
                         }
                     }
                 });
 
-                if (session) {
-                    window.wcModal.closeModal();
-                    // Extract the address using Ethers wrapped provider
-                    const eip155Provider = new ethers.BrowserProvider(window.wcProvider);
-                    const signer = await eip155Provider.getSigner();
-                    const address = await signer.getAddress();
-                    if (address) {
-                        onWalletConnectUI(address);
+        if (session) {
+            window.wcModal.closeModal();
+        // Extract the address using Ethers wrapped provider
+        const eip155Provider = new ethers.BrowserProvider(window.wcProvider);
+        const signer = await eip155Provider.getSigner();
+        const address = await signer.getAddress();
+        if (address) {
+            onWalletConnectUI(address);
                     }
                 }
             } catch (err) {
-                console.error("WalletConnect connect error:", err);
-                if (window.wcModal) window.wcModal.closeModal();
-                if (err.message && !err.message.includes("User closed")) {
-                    alert("Failed to connect: " + err.message);
+            console.error("WalletConnect connect error:", err);
+        if (window.wcModal) window.wcModal.closeModal();
+        if (err.message && !err.message.includes("User closed")) {
+            alert("Failed to connect: " + err.message);
                 }
             } finally {
                 if (btnText && (!window.walletState || !window.walletState.connected)) {
-                    btnText.textContent = 'Connect Wallet';
+            btnText.textContent = 'Connect Wallet';
                 }
             }
         }
@@ -1983,58 +1980,58 @@
         // Shared callback after wallet is connected (Either via AppKit or Injected)
         window.onWalletConnectUI = async function (address) {
             try {
-                playerState.wallet = address;
-                playerState.connected = true;
+            playerState.wallet = address;
+        playerState.connected = true;
 
-                setConnectBtnConnected(address);
-                updateNavBadge(address);
+        setConnectBtnConnected(address);
+        updateNavBadge(address);
 
-                // Check if returning player via Supabase
-                const { data, error } = await supabaseClient
-                    .from('profiles')
-                    .select('*')
-                    .eq('wallet', address.toLowerCase())
-                    .single();
+        // Check if returning player via Supabase
+        const {data, error} = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('wallet', address.toLowerCase())
+        .single();
 
-                let isReturning = false;
-                if (!error && data) {
-                    localStorage.setItem('dr_wallet', data.wallet);
-                    localStorage.setItem('dr_username', data.username);
-                    localStorage.setItem('dr_referralCode', data.referral_code || '');
-                    localStorage.setItem('dr_points', data.points || 0);
-                    localStorage.setItem('dr_currentLevel', data.level || 1);
-                    isReturning = true;
+        let isReturning = false;
+        if (!error && data) {
+            localStorage.setItem('dr_wallet', data.wallet);
+        localStorage.setItem('dr_username', data.username);
+        localStorage.setItem('dr_referralCode', data.referral_code || '');
+        localStorage.setItem('dr_points', data.points || 0);
+        localStorage.setItem('dr_currentLevel', data.level || 1);
+        isReturning = true;
                 }
 
-                if (isReturning) {
-                    // Returning player → replace "Connect" button with success UI, but stay on index.html
-                    setConnectBtnConnected(address);
-                    updateProgressSteps();
+        if (isReturning) {
+            // Returning player → replace "Connect" button with success UI, but stay on index.html
+            setConnectBtnConnected(address);
+        updateProgressSteps();
                 } else {
-                    // New player → show registration form
-                    openRegModal(address);
+            // New player → show registration form
+            openRegModal(address);
                 }
 
             } catch (err) {
-                alert('Wallet connection failed: ' + err.message);
+            alert('Wallet connection failed: ' + err.message);
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             // Restore session from localStorage safely
             const savedWallet = localStorage.getItem('dr_wallet');
-            if (savedWallet) {
-                playerState.wallet = savedWallet;
-                playerState.connected = true; // Mark as connected for UI
-                setConnectBtnConnected(savedWallet);
-                updateNavBadge(savedWallet);
+        if (savedWallet) {
+            playerState.wallet = savedWallet;
+        playerState.connected = true; // Mark as connected for UI
+        setConnectBtnConnected(savedWallet);
+        updateNavBadge(savedWallet);
             } else {
-                updateNavBadge(null);
-                const btnText = document.getElementById('connectBtnText');
-                if (btnText) btnText.textContent = 'Connect Wallet';
+            updateNavBadge(null);
+        const btnText = document.getElementById('connectBtnText');
+        if (btnText) btnText.textContent = 'Connect Wallet';
             }
-            updateProgressSteps();
-            loadGlobalStats();
+        updateProgressSteps();
+        loadGlobalStats();
         });
 
         // ── ANTI-CHEAT / ANTI-INSPECT ──
@@ -2045,12 +2042,12 @@
         document.onkeydown = function (e) {
             // F12
             if (e.keyCode == 123) return false;
-            // Ctrl+Shift+I (Inspect)
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 73) return false;
-            // Ctrl+Shift+J (Console)
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 74) return false;
-            // Ctrl+U (View Source)
-            if (e.ctrlKey && e.keyCode == 85) return false;
+        // Ctrl+Shift+I (Inspect)
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 73) return false;
+        // Ctrl+Shift+J (Console)
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 74) return false;
+        // Ctrl+U (View Source)
+        if (e.ctrlKey && e.keyCode == 85) return false;
         };
     </script>
 
