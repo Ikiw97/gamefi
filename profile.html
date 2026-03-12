@@ -1289,8 +1289,8 @@
         // ── Disconnect ──
         function disconnectWallet() {
             if (confirm('Are you sure you want to disconnect your wallet?')) {
-                if (window.wcProvider && window.wcProvider.session) {
-                    window.wcProvider.disconnect().catch(e => console.warn(e));
+                if (window.appKitModal) {
+                    window.appKitModal.disconnect();
                 }
                 localStorage.removeItem('dr_wallet');
                 localStorage.removeItem('dr_demo');
