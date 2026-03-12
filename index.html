@@ -1843,6 +1843,10 @@
             }
         }
 
+        // Global state for 2-step verification
+        let tempProviderDetails = null;
+        let tempAddress = null;
+
         // ── Chain Management ──
         async function ensureBaseChain(providerDetails) {
             const BASE_CHAIN_ID = '0x2105'; // 8453
@@ -1856,7 +1860,6 @@
                             params: [{ chainId: BASE_CHAIN_ID }],
                         });
                     } catch (switchError) {
-                        // This error code indicates that the chain has not been added to MetaMask.
                         if (switchError.code === 4902) {
                             await providerDetails.request({
                                 method: 'wallet_addEthereumChain',
@@ -1872,7 +1875,6 @@
                             throw switchError;
                         }
                     }
-                    // Wait a moment for the sync
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
                 return true;
@@ -1882,18 +1884,12 @@
             }
         }
 
-        // ── Connect Wallet ──
+        // ── Step 1: Connect Wallet ──
         async function connectWallet() {
-            // Disconnect if already connected
+            // Check if already connected via state
             if (playerState.connected || playerState.wallet) {
                 if (confirm('Disconnect wallet?')) {
-                    if (window.mmsdk) window.mmsdk.disconnect();
-                    localStorage.removeItem('dr_wallet');
-                    localStorage.removeItem('dr_username');
-                    localStorage.removeItem('dr_referralCode');
-                    localStorage.removeItem('dr_points');
-                    localStorage.removeItem('dr_currentLevel');
-                    location.reload();
+                    onWalletDisconnectUI();
                 }
                 return;
             }
@@ -1902,78 +1898,63 @@
             if (btnText) btnText.textContent = 'Connecting...';
 
             try {
-                // Determine Provider
                 let providerDetails = null;
-
-                // 1. Injected Provider First (MetaMask app browser, Extension, OKX, Trust etc.)
                 if (window.ethereum) {
                     providerDetails = window.ethereum;
-                    console.log("Using injected window.ethereum");
-                }
-                // 2. Fallback to MetaMask SDK for Mobile Chrome/Safari
-                else if (window.mmsdk) {
+                } else if (window.mmsdk) {
                     await window.mmsdk.connect();
                     providerDetails = window.mmProvider;
-                    console.log("Using MetaMask SDK Provider");
-                }
-                else {
+                } else {
                     throw new Error("No wallet provider found. Please install MetaMask!");
                 }
 
-                if (!providerDetails) throw new Error("Could not initialize wallet provider.");
-
-                // Request Accounts
                 const accounts = await providerDetails.request({ method: 'eth_requestAccounts' });
+                if (!accounts || accounts.length === 0) throw new Error("No accounts found.");
 
-                if (accounts && accounts.length > 0) {
-                    const address = accounts[0];
-                    console.log('Got address:', address);
+                const address = accounts[0];
+                const chainOk = await ensureBaseChain(providerDetails);
+                if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
 
-                    // Enforce Base Chain (AFTER connection)
-                    const chainOk = await ensureBaseChain(providerDetails);
-                    if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
+                tempProviderDetails = providerDetails;
+                tempAddress = address;
 
-                    // MANDATORY DELAY for MetaMask Mobile to sync UI
-                    console.log("Waiting for MetaMask to sync...");
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                if (btnText) btnText.textContent = 'Verify Wallet';
+                const btn = document.getElementById('btnConnectWallet');
+                if (btn) btn.onclick = verifyWallet;
 
-                    // Create Ethers v6 Provider wrapper (for general use)
-                    const provider = new ethers.BrowserProvider(providerDetails);
-
-                    // Sign a message to verify ownership
-                    const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
-
-                    // Convert message to hex for better personal_sign compatibility
-                    const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
-                        .map(b => b.toString(16).padStart(2, '0')).join('');
-
-                    try {
-                        console.log("Requesting signature...");
-                        const signature = await providerDetails.request({
-                            method: 'personal_sign',
-                            params: [hexMsg, address]
-                        });
-                        console.log('Wallet signed successfully:', signature);
-                    } catch (signErr) {
-                        console.warn('Sign message rejected or failed:', signErr);
-                        throw new Error('Signature request was rejected. Connection canceled.');
-                    }
-
-                    // Success! Proceed to UI
-                    onWalletConnectUI(address);
-                } else {
-                    throw new Error("No accounts found.");
-                }
-
+                alert("Step 1 Complete! Click 'Verify Wallet' to sign the message.");
             } catch (err) {
-                console.error("Wallet connect error:", err);
-                if (err.message && !err.message.includes("User closed") && !err.message.includes("User rejected")) {
-                    alert("Failed to connect: " + err.message);
-                }
-            } finally {
-                if (btnText && (!window.walletState || !window.walletState.connected)) {
-                    btnText.textContent = 'Connect Wallet';
-                }
+                console.error("Connect error:", err);
+                alert("Failed to connect: " + err.message);
+                if (btnText) btnText.textContent = 'Connect Wallet';
+            }
+        }
+
+        // ── Step 2: Verify Wallet ──
+        async function verifyWallet() {
+            if (!tempProviderDetails || !tempAddress) {
+                const btn = document.getElementById('btnConnectWallet');
+                if (btn) btn.onclick = connectWallet;
+                return;
+            }
+
+            const btnText = document.getElementById('connectBtnText');
+            if (btnText) btnText.textContent = 'Verifying...';
+
+            try {
+                const message = `Zico Rush GameFi\nConnect wallet: ${tempAddress}\nTimestamp: ${Date.now()}`;
+                const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
+                    .map(b => b.toString(16).padStart(2, '0')).join('');
+
+                const signature = await tempProviderDetails.request({
+                    method: 'personal_sign',
+                    params: [hexMsg, tempAddress]
+                });
+                console.log('Signed!');
+                onWalletConnectUI(tempAddress);
+            } catch (err) {
+                alert("Signature failed: " + err.message);
+                if (btnText) btnText.textContent = 'Verify Wallet';
             }
         }
 
