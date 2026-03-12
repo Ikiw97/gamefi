@@ -41,64 +41,51 @@
 
     <!-- AppKit (WalletConnect) ESM -->
     <script type="module">
+        import { createAppKit, EthersAdapter } from 'https://cdn.jsdelivr.net/npm/@reown/appkit/ethers/+esm';
+        import { mainnet } from 'https://cdn.jsdelivr.net/npm/@reown/appkit/networks/+esm';
+
         async function initAppKit() {
-            const cdns = [
-                'https://esm.sh/@reown/appkit/ethers?bundle',
-                'https://cdn.jsdelivr.net/npm/@reown/appkit/ethers/+esm',
-                'https://esm.run/@reown/appkit/ethers'
-            ];
+            try {
+                const projectId = '20f947d147b6150ebcb5510766f823dd';
+                const networks = [mainnet];
+                const ethersAdapter = new EthersAdapter();
 
-            let lastErr = null;
-            for (const url of cdns) {
-                console.log(`Trying AppKit direct load from: ${url}...`);
-                try {
-                    const { createAppKit, EthersAdapter } = await import(url);
-                    // Also need networks
-                    const networkUrl = url.replace('/ethers', '/networks');
-                    const { mainnet } = await import(networkUrl);
-
-                    const projectId = '20f947d147b6150ebcb5510766f823dd';
-                    const networks = [mainnet];
-                    const ethersAdapter = new EthersAdapter();
-
-                    const modal = createAppKit({
-                        adapters: [ethersAdapter],
-                        networks,
-                        metadata: {
-                            name: 'Zico Rush',
-                            description: 'GameFi Airdrop App',
-                            url: window.location.origin,
-                            icons: [window.location.origin + '/assets/icons/icon-192.png'],
-                            redirect: {
-                                native: window.location.origin,
-                                universal: window.location.origin
-                            }
-                        },
-                        projectId,
-                        features: { analytics: true }
-                    });
-
-                    window.appKitModal = modal;
-                    console.log("AppKit Loaded Success!");
-                    window.appKitInitError = null; // Clear if previously failed
-
-                    modal.subscribeState(async (state) => {
-                        const address = modal.getAddress();
-                        if (address && window.walletState && !window.walletState.connected) {
-                            if (typeof window.onWalletConnectUI === 'function') {
-                                window.onWalletConnectUI(address);
-                            }
+                const modal = createAppKit({
+                    adapters: [ethersAdapter],
+                    networks,
+                    metadata: {
+                        name: 'Zico Rush',
+                        description: 'GameFi Airdrop App',
+                        url: window.location.origin,
+                        icons: [window.location.origin + '/assets/icons/icon-192.png'],
+                        redirect: {
+                            native: window.location.origin,
+                            universal: window.location.origin
                         }
-                    });
-                    return; // Success, exit loop
-                } catch (err) {
-                    console.warn(`Failed URL ${url}:`, err.message);
-                    lastErr = err.message;
-                }
+                    },
+                    projectId,
+                    features: { analytics: true }
+                });
+
+                window.appKitModal = modal;
+                console.log("AppKit Loaded Success!");
+                window.appKitInitError = null;
+
+                modal.subscribeState(async (state) => {
+                    const address = modal.getAddress();
+                    if (address && window.walletState && !window.walletState.connected) {
+                        if (typeof window.onWalletConnectUI === 'function') {
+                            window.onWalletConnectUI(address);
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("AppKit completely failed to load:", err.message);
+                window.appKitInitError = err.message || "Failed to load AppKit";
             }
-            window.appKitInitError = lastErr || "All CDNs failed to load AppKit";
-            console.error("AppKit completely failed to load.");
         }
+
+        // Initialize immediately
         initAppKit();
     </script>
     <!-- Pixel Font (VT323) and Space Grotesk -->
@@ -1941,10 +1928,8 @@
 
                 if (window.appKitInitError) {
                     let msg = 'Connection system failed to load.\n\nError: ' + window.appKitInitError;
-                    msg += '\n\nWould you like to open this app securely inside the MetaMask browser?';
-                    if (confirm(msg)) {
-                        window.location.href = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
-                    }
+                    msg += '\n\nPlease check your internet connection and try refreshing the page.';
+                    alert(msg);
                     if (btnText) btnText.textContent = 'Connect Wallet';
                     return;
                 }
@@ -1975,10 +1960,8 @@
                         let msg = 'The connection module is having trouble loading.\n';
                         if (window.appKitInitError) msg += '\nSystem Error: ' + window.appKitInitError;
 
-                        msg += '\n\nWould you like to open this app securely inside the MetaMask browser?';
-                        if (confirm(msg)) {
-                            window.location.href = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
-                        }
+                        msg += '\n\nPlease check your internet connection and try refreshing the page.';
+                        alert(msg);
 
                         if (btnText) btnText.textContent = 'Connect Wallet';
                     }
