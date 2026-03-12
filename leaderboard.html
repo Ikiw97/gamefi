@@ -474,7 +474,7 @@
             <div class="waddr">${p.wallet ? escHtml(p.wallet.slice(0, 6) + '...' + p.wallet.slice(-4)) : '—'}</div>
           </div>
           <div class="pts-col">${fmtNum(p.points)}</div>
-          <div class="level-col">Lv.${p.level || 1}</div>
+          <div class="level-col">Lv.${Math.max(p.level || 1, p.max_level || 1)}</div>
         </div>`;
                 });
                 document.getElementById('lbBody').innerHTML = html;
