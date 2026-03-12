@@ -39,62 +39,60 @@
         };
     </script>
 
-    <!-- AppKit (WalletConnect) ESM -->
-    <script type="module">
-        async function initAppKit() {
+    <!-- Web3Modal & WalletConnect v2 (Standalone UMD for Mobile Stability) -->
+    <script src="https://unpkg.com/@walletconnect/modal@2.6.2/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/@walletconnect/universal-provider@2.10.4/dist/index.umd.js"></script>
+    <script>
+        window.wcProvider = null;
+        window.wcModal = null;
+        window.appKitInitError = null; // Reused variable for legacy code compatibility
+
+        async function initWalletConnect() {
             try {
-                // Dynamically import from the updated Reown AppKit v1.8.x paths
-                const [
-                    { createAppKit },
-                    { EthersAdapter },
-                    { mainnet }
-                ] = await Promise.all([
-                    import('https://esm.run/@reown/appkit'),
-                    import('https://esm.run/@reown/appkit-adapter-ethers'),
-                    import('https://esm.run/@reown/appkit/networks')
-                ]);
-
                 const projectId = '20f947d147b6150ebcb5510766f823dd';
-                const networks = [mainnet];
-                const ethersAdapter = new EthersAdapter();
 
-                const modal = createAppKit({
-                    adapters: [ethersAdapter],
-                    networks,
+                // Initialize Web3Modal
+                window.wcModal = new window.web3modal.WalletConnectModal({
+                    projectId,
+                    chains: ['eip155:1'], // Mainnet only
+                    themeMode: 'dark',
+                    themeVariables: {
+                        '--wcm-z-index': 9999
+                    }
+                });
+
+                // Initialize Universal Provider
+                window.wcProvider = await window.UniversalProvider.UniversalProvider.init({
+                    projectId,
                     metadata: {
                         name: 'Zico Rush',
                         description: 'GameFi Airdrop App',
                         url: window.location.origin,
-                        icons: [window.location.origin + '/assets/icons/icon-192.png'],
-                        redirect: {
-                            native: window.location.origin,
-                            universal: window.location.origin
-                        }
-                    },
-                    projectId,
-                    features: { analytics: true }
-                });
-
-                window.appKitModal = modal;
-                console.log("AppKit Loaded Success!");
-                window.appKitInitError = null;
-
-                modal.subscribeState(async (state) => {
-                    const address = modal.getAddress();
-                    if (address && window.walletState && !window.walletState.connected) {
-                        if (typeof window.onWalletConnectUI === 'function') {
-                            window.onWalletConnectUI(address);
-                        }
+                        icons: [window.location.origin + '/assets/icons/icon-192.png']
                     }
                 });
+
+                console.log("WalletConnect v2 Initialized Successfully");
+
+                window.wcProvider.on("display_uri", (uri) => {
+                    window.wcModal.openModal({ uri });
+                });
+
+                window.wcProvider.on("session_delete", () => {
+                    console.log("WalletConnect Session Deleted");
+                    if (window.walletState && window.walletState.connected) {
+                        if (typeof clearWalletData === 'function') clearWalletData();
+                    }
+                });
+
             } catch (err) {
-                console.error("AppKit completely failed to load:", err.message);
-                window.appKitInitError = "Failed to load AppKit modules. Please check your connection.";
+                console.error("WalletConnect setup error:", err);
+                window.appKitInitError = "WalletConnect failed to load: " + err.message;
             }
         }
 
         // Initialize immediately
-        initAppKit();
+        initWalletConnect();
     </script>
     <!-- Pixel Font (VT323) and Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1918,62 +1916,67 @@
                     const accounts = await provider.send('eth_requestAccounts', []);
                     if (accounts && accounts.length > 0) return onWalletConnectUI(accounts[0]);
                 } catch (err) {
-                    console.warn("Direct connection attempt failed, falling back to AppKit:", err.message);
+                    console.warn("Direct connection attempt failed, falling back to WalletConnect:", err.message);
                 }
             }
 
-            // 2. Fallback to AppKit (WalletConnect) for standard mobile browsers
-            if (window.appKitModal) {
-                try {
-                    await window.appKitModal.open();
-                } catch (err) {
-                    console.error("AppKit open error:", err);
-                    alert("Failed to open connection module. Please refresh the page.");
-                }
-            } else {
-                const btnText = document.getElementById('connectBtnText');
-                if (btnText) btnText.textContent = 'Preparing...';
+            // 2. Fallback to WalletConnect v2 for standard mobile browsers
+            const btnText = document.getElementById('connectBtnText');
+            if (btnText) btnText.textContent = 'Connecting...';
 
-                if (window.appKitInitError) {
-                    let msg = 'Connection system failed to load.\n\nError: ' + window.appKitInitError;
-                    msg += '\n\nPlease check your internet connection and try refreshing the page.';
-                    alert(msg);
-                    if (btnText) btnText.textContent = 'Connect Wallet';
-                    return;
+            if (window.appKitInitError) {
+                let msg = 'Connection system failed to load.\n\nError: ' + window.appKitInitError;
+                msg += '\n\nPlease check your internet connection and try refreshing the page.';
+                alert(msg);
+                if (btnText) btnText.textContent = 'Connect Wallet';
+                return;
+            }
+
+            try {
+                if (!window.wcProvider) {
+                    throw new Error("WalletConnect Provider not initialized.");
                 }
 
-                let attempts = 0;
-                const maxAttempts = 16; // ~8 seconds wait
-                const interval = setInterval(async () => {
-                    attempts++;
-                    // Check for modal or ethereum during polling
-                    if (window.appKitModal) {
-                        clearInterval(interval);
-                        try {
-                            await window.appKitModal.open();
-                        } catch (e) {
-                            console.error("AppKit delayed open error:", e);
+                // Connect universal provider which opens the modal via the "display_uri" event
+                const session = await window.wcProvider.connect({
+                    namespaces: {
+                        eip155: {
+                            methods: [
+                                "eth_sendTransaction",
+                                "eth_signTransaction",
+                                "eth_sign",
+                                "personal_sign",
+                                "eth_signTypedData",
+                            ],
+                            chains: ["eip155:1"],
+                            events: ["chainChanged", "accountsChanged"],
+                            rpcMap: {
+                                1: "https://cloudflare-eth.com"
+                            }
                         }
-                    } else if (window.ethereum) {
-                        clearInterval(interval);
-                        try {
-                            const provider = new ethers.BrowserProvider(window.ethereum);
-                            const accounts = await provider.send('eth_requestAccounts', []);
-                            if (accounts && accounts.length > 0) onWalletConnectUI(accounts[0]);
-                        } catch (err) {
-                            console.error("Polling ethereum fallback error:", err);
-                        }
-                    } else if (attempts >= maxAttempts) {
-                        clearInterval(interval);
-                        let msg = 'The connection module is having trouble loading.\n';
-                        if (window.appKitInitError) msg += '\nSystem Error: ' + window.appKitInitError;
-
-                        msg += '\n\nPlease check your internet connection and try refreshing the page.';
-                        alert(msg);
-
-                        if (btnText) btnText.textContent = 'Connect Wallet';
                     }
-                }, 500);
+                });
+
+                if (session) {
+                    window.wcModal.closeModal();
+                    // Extract the address using Ethers wrapped provider
+                    const eip155Provider = new ethers.BrowserProvider(window.wcProvider);
+                    const signer = await eip155Provider.getSigner();
+                    const address = await signer.getAddress();
+                    if (address) {
+                        onWalletConnectUI(address);
+                    }
+                }
+            } catch (err) {
+                console.error("WalletConnect connect error:", err);
+                if (window.wcModal) window.wcModal.closeModal();
+                if (err.message && !err.message.includes("User closed")) {
+                    alert("Failed to connect: " + err.message);
+                }
+            } finally {
+                if (btnText && (!window.walletState || !window.walletState.connected)) {
+                    btnText.textContent = 'Connect Wallet';
+                }
             }
         }
 
