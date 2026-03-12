@@ -1933,15 +1933,26 @@
                     const chainOk = await ensureBaseChain(providerDetails);
                     if (!chainOk) throw new Error("Please switch to Base Chain to continue.");
 
-                    // Create Ethers v6 Provider wrapper
+                    // MANDATORY DELAY for MetaMask Mobile to sync UI
+                    console.log("Waiting for MetaMask to sync...");
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    // Create Ethers v6 Provider wrapper (for general use)
                     const provider = new ethers.BrowserProvider(providerDetails);
 
                     // Sign a message to verify ownership
                     const message = `Zico Rush GameFi\nConnect wallet: ${address}\nTimestamp: ${Date.now()}`;
 
+                    // Convert message to hex for better personal_sign compatibility
+                    const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
+                        .map(b => b.toString(16).padStart(2, '0')).join('');
+
                     try {
-                        const signer = await provider.getSigner();
-                        const signature = await signer.signMessage(message);
+                        console.log("Requesting signature...");
+                        const signature = await providerDetails.request({
+                            method: 'personal_sign',
+                            params: [hexMsg, address]
+                        });
                         console.log('Wallet signed successfully:', signature);
                     } catch (signErr) {
                         console.warn('Sign message rejected or failed:', signErr);
