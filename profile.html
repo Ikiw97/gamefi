@@ -1388,6 +1388,9 @@
             loadPlayerRank();
             loadGameHistory();
             loadSocialTasks();
+
+            // Check if returning from Twitter OAuth callback
+            handleTwitterOAuthCallback();
         });
 
         // ── Player Data ──
@@ -1506,11 +1509,11 @@
         // ── Social Tasks Config ──
         const SOCIAL_TASK_CONFIG = {
             twitter_connect: {
-                url: 'https://twitter.com/ZicoRushGame',
+                url: 'https://twitter.com/zicorush_',
                 points: 50
             },
             twitter_follow: {
-                url: 'https://twitter.com/intent/follow?screen_name=ZicoRushGame',
+                url: 'https://twitter.com/intent/follow?screen_name=zicorush_',
                 points: 30
             },
             twitter_retweet: {
@@ -1527,6 +1530,9 @@
         const socialTaskActioned = {};
         // Track which tasks are completed (from DB)
         const socialTaskCompleted = {};
+        // Track Twitter OAuth connection status
+        let twitterConnected = false;
+        let twitterUsername = localStorage.getItem('dr_twitter_username') || '';
 
         // ── Load Social Tasks ──
         async function loadSocialTasks() {
@@ -1571,9 +1577,23 @@
             document.getElementById('socialTasksBadge').textContent = `${count}/${total} Done`;
         }
 
-        // ── Do Social Task (open link) ──
-        function doSocialTask(taskType) {
+        // ── Do Social Task ──
+        async function doSocialTask(taskType) {
             if (socialTaskCompleted[taskType]) return;
+
+            // Twitter Connect uses OAuth authorization
+            if (taskType === 'twitter_connect') {
+                await connectTwitterOAuth();
+                return;
+            }
+
+            // Other Twitter tasks require twitter_connect first
+            if (['twitter_follow', 'twitter_retweet', 'twitter_like'].includes(taskType)) {
+                if (!twitterConnected && !socialTaskCompleted['twitter_connect']) {
+                    showTaskToast('Connect Twitter first!', true);
+                    return;
+                }
+            }
 
             const config = SOCIAL_TASK_CONFIG[taskType];
             if (!config) return;
@@ -1590,6 +1610,95 @@
                     btn.className = 'btn-task claim';
                     btn.textContent = '🎁 Claim';
                     btn.onclick = () => claimSocialTask(taskType);
+                }
+            }
+        }
+
+        // ── Twitter OAuth Connect ──
+        async function connectTwitterOAuth() {
+            const el = document.getElementById('task-twitter_connect');
+            const btn = el ? el.querySelector('.btn-task') : null;
+
+            // Show loading state
+            if (btn) {
+                btn.className = 'btn-task loading';
+                btn.textContent = 'Connecting...';
+            }
+
+            try {
+                const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
+                    provider: 'twitter',
+                    options: {
+                        redirectTo: window.location.origin + '/profile.html'
+                    }
+                });
+
+                if (error) throw error;
+                // Browser will redirect to Twitter authorize page
+            } catch (e) {
+                console.error('Twitter OAuth error:', e);
+                showTaskToast('Failed to connect Twitter. Try again.', true);
+                if (btn) {
+                    btn.className = 'btn-task action';
+                    btn.textContent = 'Connect';
+                    btn.onclick = () => doSocialTask('twitter_connect');
+                }
+            }
+        }
+
+        // ── Handle Twitter OAuth Callback ──
+        async function handleTwitterOAuthCallback() {
+            try {
+                // Check if we have an active Supabase Auth session (from Twitter OAuth)
+                const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+
+                if (error) {
+                    console.log('Auth session check error:', error);
+                    return;
+                }
+
+                if (session && session.user) {
+                    const user = session.user;
+                    const twitterMeta = user.user_metadata || {};
+
+                    // Check if this is a Twitter login
+                    if (user.app_metadata?.provider === 'twitter' || twitterMeta.provider_id) {
+                        twitterConnected = true;
+                        twitterUsername = twitterMeta.preferred_username || twitterMeta.user_name || twitterMeta.full_name || '';
+                        localStorage.setItem('dr_twitter_username', twitterUsername);
+
+                        // Update UI for twitter_connect task
+                        const el = document.getElementById('task-twitter_connect');
+                        if (el) {
+                            const nameDiv = el.querySelector('.task-desc');
+                            if (nameDiv && twitterUsername) {
+                                nameDiv.textContent = `Connected as @${twitterUsername}`;
+                            }
+                        }
+
+                        // Auto-complete twitter_connect if not already completed
+                        if (!socialTaskCompleted['twitter_connect']) {
+                            // Mark as actioned and auto-claim
+                            socialTaskActioned['twitter_connect'] = true;
+                            await claimSocialTask('twitter_connect');
+                        }
+
+                        console.log('Twitter connected:', twitterUsername);
+                    }
+                }
+            } catch (e) {
+                console.log('OAuth callback handling error:', e);
+            }
+
+            // Also check localStorage for previously connected Twitter
+            if (!twitterConnected && localStorage.getItem('dr_twitter_username')) {
+                twitterConnected = true;
+                const el = document.getElementById('task-twitter_connect');
+                if (el && !socialTaskCompleted['twitter_connect']) {
+                    const nameDiv = el.querySelector('.task-desc');
+                    if (nameDiv) {
+                        nameDiv.textContent = `Connected as @${localStorage.getItem('dr_twitter_username')}`;
+                    }
                 }
             }
         }
