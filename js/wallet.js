@@ -238,8 +238,15 @@ function clearWalletData() {
     localStorage.removeItem('dr_points');
 
     if (window.appKitModal) {
-        window.appKitModal.disconnect();
+        try { window.appKitModal.disconnect(); } catch(e) {}
     }
+
+    // Force clear wagmi/appkit cache so it doesn't auto-reconnect
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('@w3m') || key.toLowerCase().startsWith('wagmi') || key.startsWith('@appkit')) {
+            localStorage.removeItem(key);
+        }
+    });
 
     window.walletState.connected = false;
     window.walletState.address = null;
