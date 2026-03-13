@@ -85,7 +85,9 @@ class GameScene extends Phaser.Scene {
 
         // 2.5 Knock down random walls to create loops (so player can dodge monsters)
         // Without loops, a perfectly 1-tile wide maze makes monsters impassable
-        const extraWallsToBreak = Math.floor((cols * rows) * 0.15);
+        // For goblin levels (>=8), break MORE walls so there are open spaces to dodge
+        const breakPercent = level >= 8 ? 0.30 : 0.15;
+        const extraWallsToBreak = Math.floor((cols * rows) * breakPercent);
         for (let i = 0; i < extraWallsToBreak; i++) {
             const r = 1 + Math.floor(rng() * (rows - 2));
             const c = 1 + Math.floor(rng() * (cols - 2));
@@ -150,9 +152,18 @@ class GameScene extends Phaser.Scene {
             const totalGoblins = (level - 7); // Level 8: 1 goblin, Level 9: 2, Level 10: 3, etc.
             
             // Filter empty floors to keep goblins away from the START position
+            // AND ensure the goblin has at least 2 adjacent open floor tiles so the player can dodge
             const safeGoblinFloors = emptyFloors.filter(pos => {
                 const distToStart = Math.abs(pos.c - startCol) + Math.abs(pos.r - startRow);
-                return distToStart > 4; // Keep at least 4 tiles away from start
+                if (distToStart <= 4) return false; // Keep at least 4 tiles away from start
+
+                // Count adjacent walkable tiles (floor = 0)
+                let adjacentFloors = 0;
+                if (pos.r > 0 && grid[pos.r - 1][pos.c] === 0) adjacentFloors++;
+                if (pos.r < rows - 1 && grid[pos.r + 1][pos.c] === 0) adjacentFloors++;
+                if (pos.c > 0 && grid[pos.r][pos.c - 1] === 0) adjacentFloors++;
+                if (pos.c < cols - 1 && grid[pos.r][pos.c + 1] === 0) adjacentFloors++;
+                return adjacentFloors >= 2; // Must have at least 2 open neighbors for dodging
             });
 
             // Allow up to 25% of the safe floor space to be goblins (so it doesn't get utterly unplayable)
@@ -231,6 +242,7 @@ class GameScene extends Phaser.Scene {
         this.tileData = lvl;
         this.hasKey = false;
         this.levelComplete = false;
+        this.hitCooldown = false; // invincibility frames after being hit
         this.diamondsThisLevel = 0;
         this.sessionStartPoints = gs.totalPoints;
 
@@ -394,8 +406,10 @@ class GameScene extends Phaser.Scene {
         });
 
         // ── Monster Patrol Logic ──
+        // Slower patrol at early goblin levels for fairness; speeds up at higher levels
+        const goblinPatrolDelay = Math.max(800, 1200 - (this.targetLevel - 8) * 50);
         this.time.addEvent({
-            delay: 800, // Monsters move every 800ms
+            delay: goblinPatrolDelay,
             loop: true,
             callback: () => {
                 if (this.levelComplete) return;
@@ -707,6 +721,9 @@ class GameScene extends Phaser.Scene {
 
     hitMonster() {
         if (this.levelComplete) return;
+        // Invincibility frames: ignore hit if still in cooldown
+        if (this.hitCooldown) return;
+
         const gs = window.gameState;
         gs.lives--;
         window.updateHUD();
@@ -714,13 +731,17 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.flash(300, 168, 85, 247, false);
         window.showToast('👹 MONSTER! -1 Life', '#a855f7', 1500);
 
-        // Flash player
+        // Activate invincibility for 1.5 seconds
+        this.hitCooldown = true;
+        this.time.delayedCall(1500, () => { this.hitCooldown = false; });
+
+        // Flash player (blink to indicate invincibility)
         this.tweens.add({
             targets: this.player,
             alpha: 0.3,
-            duration: 100,
+            duration: 150,
             yoyo: true,
-            repeat: 5,
+            repeat: 4,
             onComplete: () => { this.player.setAlpha(1); }
         });
 
