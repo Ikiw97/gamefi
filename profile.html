@@ -1794,12 +1794,35 @@
 
             } catch (e) {
                 console.error('Claim social task error:', e);
-                // Revert button to claim state based on task type
+
+                // Handle specific edge case: Task already completed on server, but not locally
+                if (e.message && e.message.toLowerCase().includes('already completed')) {
+                    socialTaskCompleted[taskType] = true;
+                    if (el) {
+                        el.classList.add('completed');
+                        if (btn) {
+                            btn.className = 'btn-task done';
+                            btn.textContent = 'Completed ✓';
+                            btn.onclick = null;
+                        }
+                    }
+                    showTaskToast('Task already completed!', false);
+                    return;
+                }
+
+                // Revert button to claim state based on task type (only if actually failed)
                 if (btn) {
                     if (taskType === 'twitter_connect') {
-                        btn.className = 'btn-task action';
-                        btn.textContent = 'Connect';
-                        btn.onclick = () => doSocialTask(taskType);
+                        // If we are already connected but claim failed, keep it looking connected
+                        if (twitterConnected) {
+                            btn.className = 'btn-task claim';
+                            btn.textContent = '✅ Verify & Claim';
+                            btn.onclick = () => claimSocialTask(taskType);
+                        } else {
+                            btn.className = 'btn-task action';
+                            btn.textContent = 'Connect';
+                            btn.onclick = () => doSocialTask(taskType);
+                        }
                     } else {
                         btn.className = 'btn-task claim';
                         btn.textContent = '✅ Verify & Claim';
