@@ -1577,6 +1577,9 @@
             document.getElementById('socialTasksBadge').textContent = `${count}/${total} Done`;
         }
 
+        // ── Verification timer duration (seconds) ──
+        const VERIFY_TIMER_SECONDS = 30;
+
         // ── Do Social Task ──
         async function doSocialTask(taskType) {
             if (socialTaskCompleted[taskType]) return;
@@ -1598,20 +1601,42 @@
             const config = SOCIAL_TASK_CONFIG[taskType];
             if (!config) return;
 
-            // Open Twitter link in new tab
+            // Open Twitter intent link in new tab
             window.open(config.url, '_blank');
 
-            // After opening, change button to "Claim"
+            // Start verification countdown timer
             socialTaskActioned[taskType] = true;
+            startVerifyCountdown(taskType);
+        }
+
+        // ── Verification Countdown Timer ──
+        function startVerifyCountdown(taskType) {
             const el = document.getElementById(`task-${taskType}`);
-            if (el) {
-                const btn = el.querySelector('.btn-task');
-                if (btn) {
+            if (!el) return;
+            const btn = el.querySelector('.btn-task');
+            if (!btn) return;
+
+            let remaining = VERIFY_TIMER_SECONDS;
+
+            // Disable button and show countdown
+            btn.className = 'btn-task loading';
+            btn.textContent = `⏳ Verifying... ${remaining}s`;
+            btn.onclick = null;
+            btn.disabled = true;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining > 0) {
+                    btn.textContent = `⏳ Verifying... ${remaining}s`;
+                } else {
+                    clearInterval(interval);
+                    // Timer done — allow claiming
+                    btn.disabled = false;
                     btn.className = 'btn-task claim';
-                    btn.textContent = '🎁 Claim';
+                    btn.textContent = '✅ Verify & Claim';
                     btn.onclick = () => claimSocialTask(taskType);
                 }
-            }
+            }, 1000);
         }
 
         // ── Twitter OAuth Connect ──
@@ -1665,7 +1690,10 @@
                     if (user.app_metadata?.provider === 'twitter' || twitterMeta.provider_id) {
                         twitterConnected = true;
                         twitterUsername = twitterMeta.preferred_username || twitterMeta.user_name || twitterMeta.full_name || '';
+                        // Store Twitter user ID (for anti-cheat: 1 Twitter account per wallet)
+                        const twitterUserId = twitterMeta.provider_id || user.id || '';
                         localStorage.setItem('dr_twitter_username', twitterUsername);
+                        localStorage.setItem('dr_twitter_user_id', twitterUserId);
 
                         // Update UI for twitter_connect task
                         const el = document.getElementById('task-twitter_connect');
@@ -1683,7 +1711,7 @@
                             await claimSocialTask('twitter_connect');
                         }
 
-                        console.log('Twitter connected:', twitterUsername);
+                        console.log('Twitter connected:', twitterUsername, 'ID:', twitterUserId);
                     }
                 }
             } catch (e) {
@@ -1727,7 +1755,9 @@
                         },
                         body: JSON.stringify({
                             wallet: wallet.toLowerCase(),
-                            task_type: taskType
+                            task_type: taskType,
+                            twitter_user_id: localStorage.getItem('dr_twitter_user_id') || '',
+                            twitter_username: localStorage.getItem('dr_twitter_username') || ''
                         })
                     }
                 );
@@ -1767,7 +1797,7 @@
                 // Revert button to claim state
                 if (btn) {
                     btn.className = 'btn-task claim';
-                    btn.textContent = '🎁 Claim';
+                    btn.textContent = '✅ Verify & Claim';
                     btn.onclick = () => claimSocialTask(taskType);
                 }
                 showTaskToast('Failed to claim. Try again.', true);
