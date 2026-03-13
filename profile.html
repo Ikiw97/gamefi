@@ -1794,11 +1794,17 @@
 
             } catch (e) {
                 console.error('Claim social task error:', e);
-                // Revert button to claim state
+                // Revert button to claim state based on task type
                 if (btn) {
-                    btn.className = 'btn-task claim';
-                    btn.textContent = '✅ Verify & Claim';
-                    btn.onclick = () => claimSocialTask(taskType);
+                    if (taskType === 'twitter_connect') {
+                        btn.className = 'btn-task action';
+                        btn.textContent = 'Connect';
+                        btn.onclick = () => doSocialTask(taskType);
+                    } else {
+                        btn.className = 'btn-task claim';
+                        btn.textContent = '✅ Verify & Claim';
+                        btn.onclick = () => claimSocialTask(taskType);
+                    }
                 }
                 showTaskToast('Failed to claim. Try again.', true);
             }
