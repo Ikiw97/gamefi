@@ -1436,7 +1436,7 @@
                 const points = data.points || 0;
                 const diamonds = data.diamonds_collected || 0;
                 const games = data.games_played || 0; // Assuming this field exists or just 0
-                const refs = 0; // Need to count referrals if needed
+                const refs = data.referral_count || 0;
 
                 document.getElementById('profileUsername').textContent = data.username || 'Player';
                 document.getElementById('statPoints').textContent = fmtNum(points);
