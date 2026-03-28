@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Zico Rush – Quest</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Zico Rush" />
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+    <meta name="description"
+        content="View your Zico Rush GameFi player profile, stats, referral code, and game history." />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>" />
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <!-- Reown AppKit for Multi-Wallet Support -->
+    <script type="module" src="js/appkit-init.js"></script>
+    <!-- Ethers v6 for wallet support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
+    <style>
+        /* ───── NAVBAR ───── */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 60px;
+            background: rgba(3, 7, 18, 0.88);
+            backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid rgba(168, 85, 247, 0.15);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-decoration: none;
+        }
+
+        .nav-brand .brand-icon {
+            font-size: 1.4rem;
+            filter: drop-shadow(0 0 8px #38bdf8);
+        }
+
+        .nav-brand .brand-text {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.08em;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.9rem;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            color: #64748b;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.25s;
+            letter-spacing: 0.04em;
+        }
+
+        .nav-link:hover {
+            color: #e2e8f0;
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .nav-link.active {
+            color: #a855f7;
+            background: rgba(168, 85, 247, 0.12);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .nav-link .nav-icon {
+            font-size: 0.85rem;
+        }
+
+        .nav-wallet {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .nav-wallet-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.85rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            border-radius: 999px;
+            font-size: 0.58rem;
+            color: #22c55e;
+            font-family: monospace;
+            letter-spacing: 0.03em;
+        }
+
+        .nav-wallet-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulseGreen 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGreen {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .nav-wallet-badge.disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.25);
+            color: #ef4444;
+        }
+
+        .nav-wallet-badge.disconnected .dot {
+            background: #ef4444;
+            animation: none;
+        }
+
+        /* ───── PAGE LAYOUT ───── */
+        .page-body {
+            position: relative;
+            z-index: 1;
+            padding-top: 80px;
+            min-height: 100vh;
+        }
+
+        .profile-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 1.25rem 4rem;
+        }
+
+        /* ───── PROFILE HEADER CARD ───── */
+        .profile-header-card {
+            display: flex;
+            align-items: center;
+            gap: 1.75rem;
+            background: linear-gradient(135deg, rgba(24, 24, 27, 0.6), rgba(9, 9, 11, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #a855f7, #06b6d4, #f59e0b);
+            opacity: 0.7;
+        }
+
+        .profile-avatar-box {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(6, 182, 212, 0.25));
+            border: 2px solid rgba(168, 85, 247, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.2);
+            animation: avatarFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes avatarFloat {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-6px);
+            }
+        }
+
+        .avatar-level-ring {
+            position: absolute;
+            bottom: -6px;
+            right: -6px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.55rem;
+            font-weight: 900;
+            color: #000;
+            border: 2px solid #030712;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+        }
+
+        .profile-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-info .username {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1.4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f1f5f9, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.35rem;
+            line-height: 1.3;
+        }
+
+        .profile-info .wallet-addr {
+            font-family: monospace;
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .copy-icon {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            font-size: 0.75rem;
+        }
+
+        .copy-icon:hover {
+            opacity: 1;
+        }
+
+        .profile-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .p-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.22rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.58rem;
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .p-badge.level {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(249, 115, 22, 0.15));
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+        }
+
+        .p-badge.season {
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            color: #06b6d4;
+        }
+
+        .p-badge.demo {
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #60a5fa;
+        }
+
+        .profile-header-actions {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .btn-play-now {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.75rem;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.7rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s;
+            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-play-now::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+
+        .btn-play-now:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(168, 85, 247, 0.6);
+        }
+
+        .btn-play-now:hover::after {
+            opacity: 1;
+        }
+
+        /* ───── STATS ROW ───── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(9, 9, 11, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--stat-accent, #a855f7);
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--stat-accent, rgba(139, 92, 246, 0.15));
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card .s-icon {
+            font-size: 1.6rem;
+            margin-bottom: 0.45rem;
+            color: var(--stat-accent, #a855f7);
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
+        }
+
+        .stat-card .s-value {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: var(--stat-accent, #a855f7);
+            margin-bottom: 0.15rem;
+        }
+
+        .stat-card .s-label {
+            font-size: 0.58rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* ───── TWO-COLUMN GRID ───── */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        /* ───── GLASS CARD ───── */
+        .glass-card {
+            background: linear-gradient(135deg, rgba(24, 24, 27, 0.6), rgba(9, 9, 11, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 16px 35px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.1rem;
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.68rem;
+            color: #a855f7;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-badge {
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.55rem;
+            background: rgba(168, 85, 247, 0.12);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            color: #c084fc;
+        }
+
+        /* ───── REFERRAL SECTION ───── */
+        .referral-code-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(245, 158, 11, 0.06);
+            border: 1px dashed rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .ref-code {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #f59e0b;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-copy {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 8px;
+            color: #f59e0b;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            padding: 0.4rem 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: rgba(245, 158, 11, 0.25);
+            transform: scale(1.05);
+        }
+
+        .ref-link {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 0.55rem 0.85rem;
+            font-size: 0.62rem;
+            color: #94a3b8;
+            word-break: break-all;
+            font-family: monospace;
+            margin-bottom: 0.65rem;
+        }
+
+        .ref-info {
+            font-size: 0.65rem;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .ref-info strong {
+            color: #f59e0b;
+        }
+
+        .ref-stats {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .ref-stat {
+            flex: 1;
+            background: rgba(245, 158, 11, 0.06);
+            border: 1px solid rgba(245, 158, 11, 0.12);
+            border-radius: 10px;
+            padding: 0.6rem;
+            text-align: center;
+        }
+
+        .ref-stat .rs-val {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f59e0b;
+        }
+
+        .ref-stat .rs-lbl {
+            font-size: 0.55rem;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-top: 0.1rem;
+        }
+
+        /* ───── GAME HISTORY ───── */
+        .history-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.25);
+            border-radius: 4px;
+        }
+
+        .h-row {
+            display: grid;
+            grid-template-columns: 45px 1fr 70px 55px;
+            gap: 0.5rem;
+            padding: 0.6rem 0.4rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            align-items: center;
+            transition: background 0.15s;
+            border-radius: 8px;
+        }
+
+        .h-row:hover {
+            background: rgba(168, 85, 247, 0.05);
+        }
+
+        .h-row:last-child {
+            border-bottom: none;
+        }
+
+        .h-lvl {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: #f59e0b;
+            text-align: center;
+            background: rgba(245, 158, 11, 0.08);
+            padding: 0.3rem 0;
+            border-radius: 6px;
+        }
+
+        .h-detail {
+            min-width: 0;
+        }
+
+        .h-detail .h-coins {
+            font-size: 0.72rem;
+            color: #e2e8f0;
+        }
+
+        .h-detail .h-date {
+            font-size: 0.58rem;
+            color: #475569;
+            margin-top: 1px;
+        }
+
+        .h-pts {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #a855f7;
+            text-align: right;
+        }
+
+        .h-result {
+            text-align: right;
+            font-size: 0.62rem;
+            font-weight: 600;
+        }
+
+        .h-result.win {
+            color: #22c55e;
+        }
+
+        .h-result.lose {
+            color: #ef4444;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #475569;
+        }
+
+        .empty-state .es-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.5;
+        }
+
+        .empty-state .es-text {
+            font-size: 0.75rem;
+        }
+
+        /* ───── ACHIEVEMENTS ───── */
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.6rem;
+        }
+
+        .achievement {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.4), rgba(9, 9, 11, 0.6));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1rem 0.75rem;
+            text-align: center;
+            transition: all 0.25s;
+        }
+
+        .achievement.unlocked {
+            border-color: rgba(139, 92, 246, 0.3);
+            background: linear-gradient(145deg, rgba(139, 92, 246, 0.1), rgba(9, 9, 11, 0.8));
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+        }
+
+        .achievement.locked {
+            opacity: 0.35;
+            filter: grayscale(0.8);
+        }
+
+        .achievement .ach-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.3));
+        }
+
+        .achievement .ach-name {
+            font-size: 0.55rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        /* ───── SOCIAL TASKS ───── */
+        .social-tasks-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.5), rgba(9, 9, 11, 0.7));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .task-item:hover {
+            border-color: rgba(168, 85, 247, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .task-item.completed {
+            border-color: rgba(34, 197, 94, 0.25);
+            background: linear-gradient(145deg, rgba(34, 197, 94, 0.05), rgba(9, 9, 11, 0.7));
+        }
+
+        .task-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            background: var(--task-bg, rgba(29, 161, 242, 0.12));
+            border: 1px solid var(--task-border, rgba(29, 161, 242, 0.25));
+        }
+
+        .task-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-name {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.15rem;
+        }
+
+        .task-desc {
+            font-size: 0.58rem;
+            color: #64748b;
+        }
+
+        .task-points {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.68rem;
+            font-weight: 900;
+            color: #f59e0b;
+            padding: 0.25rem 0.6rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 999px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-task {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            letter-spacing: 0.04em;
+        }
+
+        .btn-task.action {
+            background: linear-gradient(135deg, #1d9bf0, #1a8cd8);
+            color: white;
+            box-shadow: 0 4px 15px rgba(29, 155, 240, 0.3);
+        }
+
+        .btn-task.action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(29, 155, 240, 0.5);
+        }
+
+        .btn-task.claim {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            animation: claimPulse 2s ease-in-out infinite;
+        }
+
+        .btn-task.claim:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+        }
+
+        @keyframes claimPulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+            50% { box-shadow: 0 4px 25px rgba(245, 158, 11, 0.6); }
+        }
+
+        .btn-task.done {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .btn-task.loading {
+            background: rgba(148, 163, 184, 0.1);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+            cursor: wait;
+            pointer-events: none;
+        }
+
+        .social-progress {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .social-progress-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .social-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #06b6d4);
+            border-radius: 999px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .social-progress-text {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.58rem;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .task-item {
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                padding: 0.85rem 1rem;
+            }
+            .task-info {
+                flex: 1;
+                min-width: 120px;
+            }
+            .task-points {
+                order: 3;
+            }
+            .btn-task {
+                order: 4;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        /* ───── DISCONNECT ───── */
+        .disconnect-row {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.25rem;
+        }
+
+        .btn-disconnect {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1.5rem;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 10px;
+            color: #ef4444;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.6rem;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .btn-disconnect:hover {
+            background: rgba(239, 68, 68, 0.15);
+            transform: translateY(-1px);
+        }
+
+        /* ───── NOT CONNECTED ───── */
+        .not-connected-card {
+            text-align: center;
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, rgba(24, 24, 27, 0.7), rgba(9, 9, 11, 0.9));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .not-connected-card .nc-icon {
+            font-size: 4.5rem;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.3));
+            background: linear-gradient(135deg, #f43f5e, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .not-connected-card h2 {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1rem;
+            color: #a855f7;
+            margin-bottom: 0.75rem;
+        }
+
+        .not-connected-card p {
+            color: #64748b;
+            font-size: 0.78rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .btn-connect-go {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.9rem 2.5rem;
+            background: linear-gradient(135deg, #f6851b, #e2761b);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s;
+            box-shadow: 0 4px 20px rgba(246, 133, 27, 0.35);
+        }
+
+        .btn-connect-go:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(246, 133, 27, 0.5);
+        }
+
+        /* ───── RESPONSIVE ───── */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 0.75rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .profile-header-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+                padding: 1.5rem;
+            }
+
+            .profile-info .wallet-addr {
+                justify-content: center;
+            }
+
+            .profile-badges {
+                justify-content: center;
+            }
+
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .achievement-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .nav-brand .brand-text {
+                font-size: 0.6rem;
+            }
+        }
+
+        /* ───── Mobile nav toggle ───── */
+        .nav-mobile-links {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .nav-mobile-links {
+                display: flex;
+                gap: 0.15rem;
+            }
+
+            .nav-mobile-link {
+                padding: 0.5rem 0.6rem;
+                font-size: 1rem;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: background 0.2s;
+            }
+
+            .nav-mobile-link:hover,
+            .nav-mobile-link.active {
+                background: rgba(168, 85, 247, 0.12);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animated"></div>
+    <div class="stars" id="starsContainer"></div>
+
+    <!-- ═══════ NAVBAR ═══════ -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">
+            <span class="brand-icon">💎</span>
+            <span class="brand-text">ZICO RUSH</span>
+        </a>
+
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">
+                <span class="nav-icon">🏠</span> Home
+            </a>
+            <a href="game.html" class="nav-link">
+                <span class="nav-icon">🎮</span> Play
+            </a>
+            <a href="leaderboard.html" class="nav-link">
+                <span class="nav-icon">🏆</span> Leaderboard
+            </a>
+            <a href="quest.html" class="nav-link active">
+                <span class="nav-icon">👤</span> Quest
+            </a>
+        </div>
+
+        <!-- Mobile nav icons -->
+        <div class="nav-mobile-links">
+            <a href="index.html" class="nav-mobile-link">🏠</a>
+            <a href="game.html" class="nav-mobile-link">🎮</a>
+            <a href="leaderboard.html" class="nav-mobile-link">🏆</a>
+            <a href="quest.html" class="nav-mobile-link active">👤</a>
+        </div>
+
+        <div class="nav-wallet">
+            <div class="nav-wallet-badge disconnected" id="navWalletBadge">
+                <span class="dot"></span>
+                <span id="navWalletAddr">Not Connected</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════ PAGE BODY ═══════ -->
+    <div class="page-body">
+        <div class="profile-wrapper">
+
+            <!-- Not Connected State -->
+            <div id="notConnected" style="display:none">
+                <div class="not-connected-card">
+                    <div class="nc-icon"><i class="ph-fill ph-lock-key"></i></div>
+                    <h2>WALLET NOT CONNECTED</h2>
+                    <p>Connect your crypto wallet to view your player profile, game stats, and referral rewards.</p>
+                    <a href="index.html" class="btn-connect-go">🦊 Connect Wallet</a>
+                </div>
+            </div>
+
+            <!-- ═══════ PROFILE CONTENT ═══════ -->
+            <div id="profileContent" style="display:none">
+
+                <!-- Profile Header -->
+                <div class="profile-header-card">
+                    <div class="profile-avatar-box">
+                        <div class="profile-avatar" id="profileAvatar">👤</div>
+                        <div class="avatar-level-ring" id="avatarLevel">1</div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="username" id="profileUsername">Player</div>
+                        <div class="wallet-addr">
+                            <span id="profileWallet">0x0000...0000</span>
+                            <span class="copy-icon" onclick="copyWallet()" title="Copy address">📋</span>
+                        </div>
+                        <div class="profile-badges">
+                            <span class="p-badge level" id="levelBadge">⚡ LVL 1</span>
+                            <span class="p-badge season">🚀 SEASON 1</span>
+                            <span class="p-badge" id="wlBadge" style="display:none; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(249, 115, 22, 0.15)); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b;">✨ WHITELIST</span>
+                            <span class="p-badge demo" id="demoBadge" style="display:none">🔵 DEMO</span>
+                        </div>
+                    </div>
+                    <div class="profile-header-actions">
+                        <a href="game.html" class="btn-play-now">⚡ PLAY NOW</a>
+                    </div>
+                </div>
+
+                <!-- Mint Badge Section -->
+                <div class="glass-card" style="margin-bottom: 1.25rem; border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);">
+                    <div class="card-header" style="margin-bottom: 0.5rem;">
+                        <div class="card-title" style="color: #f59e0b; font-size: 0.8rem;"><i class="ph-fill ph-certificate"></i> Early Adopter NFT</div>
+                        <span class="card-badge" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.2); color: #fbbf24;" id="mintStatusBadge">Available</span>
+                    </div>
+                    <p style="font-size: 0.65rem; color: #cbd5e1; margin-bottom: 0.75rem; line-height: 1.5;">Mint your exclusive Early Adopter NFT to gain <strong>Whitelist Status</strong> and a massive <strong>+100,000 Points</strong> bonus. Only one mint per wallet!</p>
+                    <!-- Network Info -->
+                    <div style="display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <div style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.58rem; font-family: 'Space Grotesk', monospace; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.25); color: #06b6d4;">
+                            ⛓️ Base Network
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <button id="btnMintBadge" onclick="mintBadge()" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; padding: 0.8rem 1.5rem; border-radius: 12px; color: #000; font-family: 'Space Grotesk', monospace; font-size: 0.7rem; font-weight: 900; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
+                            💎 MINT BADGE NOW
+                        </button>
+                        <span id="mintErrorText" style="color: #ef4444; font-size: 0.6rem; display: none;"></span>
+                    </div>
+                    <!-- Tx Hash Display (hidden until tx sent) -->
+                    <div id="mintTxInfo" style="display: none; margin-top: 0.75rem; padding: 0.6rem 0.85rem; background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.15); border-radius: 10px; font-size: 0.6rem; color: #94a3b8; font-family: monospace; word-break: break-all;">
+                        🔗 Tx: <a id="mintTxLink" href="#" target="_blank" style="color: #22c55e; text-decoration: underline;"></a>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-row">
+                    <div class="stat-card" style="--stat-accent: #a855f7">
+                        <div class="s-icon"><i class="ph-fill ph-sparkle"></i></div>
+                        <div class="s-value" id="statPoints">0</div>
+                        <div class="s-label">Points</div>
+                    </div>
+                    <div class="stat-card" style="--stat-accent: #38bdf8">
+                        <div class="s-icon"><i class="ph-fill ph-coin"></i></div>
+                        <div class="s-value" id="statCoins">0</div>
+                        <div class="s-label">Coins</div>
+                    </div>
+                    <div class="stat-card" style="--stat-accent: #22c55e">
+                        <div class="s-icon"><i class="ph-fill ph-trophy"></i></div>
+                        <div class="s-value" id="statRank">—</div>
+                        <div class="s-label">Rank</div>
+                    </div>
+                    <div class="stat-card" style="--stat-accent: #06b6d4">
+                        <div class="s-icon"><i class="ph-fill ph-game-controller"></i></div>
+                        <div class="s-value" id="statGames">0</div>
+                        <div class="s-label">Games</div>
+                    </div>
+                </div>
+
+                <!-- Two-column content -->
+                <div class="content-grid">
+
+                    <!-- LEFT: Referral -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title">🎁 Referral</div>
+                            <span class="card-badge" id="refCountBadge">0 Referred</span>
+                        </div>
+                        <div class="referral-code-box">
+                            <span class="ref-code" id="refCode">—</span>
+                            <button class="btn-copy" onclick="copyRefCode()">Copy</button>
+                        </div>
+                        <div class="ref-link" id="refLinkBox"></div>
+                        <div class="ref-info">
+                            Share your referral code with friends. You both earn <strong>+25 bonus
+                                points</strong> when they join!
+                        </div>
+                        <div class="ref-stats">
+                            <div class="ref-stat">
+                                <div class="rs-val" id="refCount">0</div>
+                                <div class="rs-lbl">Friends</div>
+                            </div>
+                            <div class="ref-stat">
+                                <div class="rs-val" id="refBonus">0</div>
+                                <div class="rs-lbl">Bonus Pts</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Achievements -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title">🏅 Achievements</div>
+                        </div>
+                        <div class="achievement-grid" id="achievementGrid">
+                            <div class="achievement locked" id="ach1">
+                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge1.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-name">Mint NFT</div>
+                            </div>
+                            <div class="achievement locked" id="ach2">
+                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge2.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-name">100K Coins</div>
+                            </div>
+                            <div class="achievement locked" id="ach3">
+                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge3.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-name">Level 50</div>
+                            </div>
+                            <div class="achievement locked" id="ach4">
+                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge4.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-name">Level 25</div>
+                            </div>
+                            <div class="achievement locked" id="ach5">
+                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge5.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-name">20 Referrals</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Tasks -->
+                <div class="glass-card social-tasks-section">
+                    <div class="card-header">
+                        <div class="card-title">𝕏 Social Tasks</div>
+                        <span class="card-badge" id="socialTasksBadge">0/4 Done</span>
+                    </div>
+                    <div class="task-list" id="socialTaskList">
+                        <!-- Connect Twitter -->
+                        <div class="task-item" id="task-twitter_connect" data-task="twitter_connect" data-points="50">
+                            <div class="task-icon" style="--task-bg: rgba(255,255,255,0.08); --task-border: rgba(255,255,255,0.2)">𝕏</div>
+                            <div class="task-info">
+                                <div class="task-name">Connect Twitter</div>
+                                <div class="task-desc">Follow us on Twitter to stay updated</div>
+                            </div>
+                            <div class="task-points">+50 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_connect')">Connect</button>
+                        </div>
+                        <!-- Follow -->
+                        <div class="task-item" id="task-twitter_follow" data-task="twitter_follow" data-points="30">
+                            <div class="task-icon" style="--task-bg: rgba(168,85,247,0.12); --task-border: rgba(168,85,247,0.25)">👥</div>
+                            <div class="task-info">
+                                <div class="task-name">Follow @zicorush_</div>
+                                <div class="task-desc">Follow our official Twitter account</div>
+                            </div>
+                            <div class="task-points">+30 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_follow')">Follow</button>
+                        </div>
+                        <!-- Retweet -->
+                        <div class="task-item" id="task-twitter_retweet" data-task="twitter_retweet" data-points="20">
+                            <div class="task-icon" style="--task-bg: rgba(34,197,94,0.12); --task-border: rgba(34,197,94,0.25)">🔁</div>
+                            <div class="task-info">
+                                <div class="task-name">Retweet Pinned Tweet</div>
+                                <div class="task-desc">Retweet our pinned announcement</div>
+                            </div>
+                            <div class="task-points">+20 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_retweet')">Retweet</button>
+                        </div>
+                        <!-- Like -->
+                        <div class="task-item" id="task-twitter_like" data-task="twitter_like" data-points="20">
+                            <div class="task-icon" style="--task-bg: rgba(239,68,68,0.12); --task-border: rgba(239,68,68,0.25)">❤️</div>
+                            <div class="task-info">
+                                <div class="task-name">Like Tweet</div>
+                                <div class="task-desc">Like our pinned tweet</div>
+                            </div>
+                            <div class="task-points">+20 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_like')">Like</button>
+                        </div>
+                    </div>
+                    <div class="social-progress">
+                        <div class="social-progress-bar">
+                            <div class="social-progress-fill" id="socialProgressFill" style="width: 0%"></div>
+                        </div>
+                        <span class="social-progress-text" id="socialProgressText">0/4 tasks completed</span>
+                    </div>
+                </div>
+
+                <!-- Game History -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">📋 Game History</div>
+                        <span class="card-badge" id="historyCountBadge">Recent 20</span>
+                    </div>
+                    <div id="historyContent">
+                        <div class="empty-state">
+                            <div class="es-icon">⟳</div>
+                            <div class="es-text">Loading history...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disconnect -->
+                <div class="disconnect-row">
+                    <button class="btn-disconnect" onclick="disconnectWallet()">🔌 Disconnect Wallet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const wallet = localStorage.getItem('dr_wallet') || '';
+        const isDemo = localStorage.getItem('dr_demo') === '1';
+
+        window.walletState = {
+            connected: !!wallet,
+            wallet: wallet,
+            username: localStorage.getItem('dr_username') || null
+        };
+
+        // ── Stars ──
+        const sc = document.getElementById('starsContainer');
+        for (let i = 0; i < 70; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            s.style.cssText = `left:${Math.random() * 100}%;top:${Math.random() * 100}%;--d:${(Math.random() * 3 + 1).toFixed(1)}s;opacity:${Math.random() * 0.4 + 0.1};width:${Math.random() < 0.3 ? 3 : 2}px;height:${Math.random() < 0.3 ? 3 : 2}px`;
+            sc.appendChild(s);
+        }
+
+        // ── Helpers ──
+        function fmtNum(n) {
+            if (!n) return '0';
+            if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+            return String(n);
+        }
+        function maskAddr(addr) {
+            if (!addr) return '—';
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
+        }
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '—';
+            return d.innerHTML;
+        }
+        function fmtDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+                ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!wallet) {
+                document.getElementById('notConnected').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('profileContent').style.display = 'block';
+
+            // Navbar wallet
+            const navBadge = document.getElementById('navWalletBadge');
+            navBadge.classList.remove('disconnected');
+            document.getElementById('navWalletAddr').textContent = maskAddr(wallet);
+
+            // Load from localStorage first (instant)
+            const username = localStorage.getItem('dr_username') || 'Player';
+            const level = Math.max(parseInt(localStorage.getItem('dr_currentLevel') || '1'), parseInt(localStorage.getItem('dr_maxLevel') || '1'));
+            const points = parseInt(localStorage.getItem('dr_points') || '0');
+            const refCode = localStorage.getItem('dr_referralCode') || '';
+
+            document.getElementById('profileUsername').textContent = username;
+            document.getElementById('profileWallet').textContent = maskAddr(wallet);
+            document.getElementById('avatarLevel').textContent = level;
+            document.getElementById('levelBadge').textContent = `⚡ LVL ${level}`;
+            document.getElementById('statPoints').textContent = fmtNum(points);
+
+            if (refCode) {
+                document.getElementById('refCode').textContent = refCode;
+                document.getElementById('refLinkBox').textContent = `${window.location.origin}?ref=${refCode}`;
+            }
+
+            if (isDemo) {
+                document.getElementById('demoBadge').style.display = 'inline-flex';
+            }
+
+            // Avatar emoji
+            const avatarEmojis = ['⚔️', '🛡️', '🗡️', '🏹', '🧙', '🦊', '🐉', '💎', '👑', '🔥', '⭐', '🚀'];
+            const idx = username.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % avatarEmojis.length;
+            document.getElementById('profileAvatar').textContent = avatarEmojis[idx];
+
+            // Update achievements based on local data
+            updateAchievements(level, points, 0, 0);
+
+            // Fetch API data
+            loadPlayerData();
+            loadPlayerRank();
+            loadGameHistory();
+            loadSocialTasks();
+            checkMintBadgeStatus();
+
+            // Check if returning from Twitter OAuth callback
+            handleTwitterOAuthCallback();
+        });
+
+        // ── Player Data ──
+        async function loadPlayerData() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('wallet', wallet.toLowerCase())
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!data) return;
+
+                const level = Math.max(
+                    data.level || 1,
+                    parseInt(localStorage.getItem('dr_currentLevel') || '1'),
+                    parseInt(localStorage.getItem('dr_maxLevel') || '1')
+                );
+                const points = data.points || 0;
+                const diamonds = data.diamonds_collected || 0;
+                const games = data.games_played || 0; // Assuming this field exists or just 0
+                const refs = 0; // Need to count referrals if needed
+
+                document.getElementById('profileUsername').textContent = data.username || 'Player';
+                document.getElementById('statPoints').textContent = fmtNum(points);
+                document.getElementById('statCoins').textContent = fmtNum(diamonds);
+                document.getElementById('avatarLevel').textContent = level;
+                document.getElementById('levelBadge').textContent = `⚡ LVL ${level}`;
+                document.getElementById('statGames').textContent = fmtNum(games);
+                document.getElementById('refCount').textContent = refs;
+                document.getElementById('refCountBadge').textContent = `${refs} Referred`;
+                document.getElementById('refBonus').textContent = fmtNum(refs * 25);
+
+                if (data.referral_code) {
+                    document.getElementById('refCode').textContent = data.referral_code;
+                    document.getElementById('refLinkBox').textContent = `${window.location.origin}?ref=${data.referral_code}`;
+                }
+
+                // Update localStorage
+                localStorage.setItem('dr_username', data.username || 'Player');
+                localStorage.setItem('dr_points', points);
+                localStorage.setItem('dr_currentLevel', level);
+                localStorage.setItem('dr_maxLevel', level);
+                if (data.referral_code) localStorage.setItem('dr_referralCode', data.referral_code);
+
+                updateAchievements(level, points, diamonds, refs);
+            } catch (e) {
+                console.log('Could not load player data:', e);
+            }
+        }
+
+        // ── Player Rank ──
+        async function loadPlayerRank() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('profiles')
+                    .select('wallet, points')
+                    .order('points', { ascending: false });
+
+                if (error) throw error;
+                
+                const players = data || [];
+                const meIndex = players.findIndex(p =>
+                    p.wallet && wallet && p.wallet.toLowerCase() === wallet.toLowerCase()
+                );
+                
+                if (meIndex !== -1) {
+                    document.getElementById('statRank').textContent = `#${meIndex + 1}`;
+                } else {
+                    document.getElementById('statRank').textContent = '—';
+                }
+            } catch (e) {
+                console.log('Rank error:', e);
+                document.getElementById('statRank').textContent = '—';
+            }
+        }
+
+        // ── Game History ──
+        async function loadGameHistory() {
+            // Note: History table not yet implemented in Supabase migration
+            showEmptyHistory();
+        }
+
+        function showEmptyHistory() {
+            document.getElementById('historyContent').innerHTML = `
+                <div class="empty-state">
+                    <div class="es-icon">🎮</div>
+                    <div class="es-text">No games played yet. Start playing!</div>
+                </div>`;
+        }
+
+        // ── Achievements ──
+        function updateAchievements(level, points, diamonds, refs) {
+            // ach1 is "Mint NFT Badge" — toggled dynamically via markMintedUI()
+            
+            // 100,000 Coins
+            toggle('ach2', diamonds >= 100000);
+            // Level 50
+            toggle('ach3', level >= 50);
+            // Level 25
+            toggle('ach4', level >= 25);
+            // 20 Referrals
+            toggle('ach5', refs >= 20);
+        }
+
+        function toggle(id, unlocked) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('unlocked', unlocked);
+            el.classList.toggle('locked', !unlocked);
+        }
+
+        // ── Social Tasks Config ──
+        const SOCIAL_TASK_CONFIG = {
+            twitter_connect: {
+                url: 'https://twitter.com/zicorush_',
+                points: 50
+            },
+            twitter_follow: {
+                url: 'https://twitter.com/intent/follow?screen_name=zicorush_',
+                points: 30
+            },
+            twitter_retweet: {
+                url: 'https://twitter.com/intent/retweet?tweet_id=TWEET_ID_HERE',
+                points: 20
+            },
+            twitter_like: {
+                url: 'https://twitter.com/intent/like?tweet_id=TWEET_ID_HERE',
+                points: 20
+            }
+        };
+
+        // Track which tasks have been "actioned" (opened link) but not yet claimed
+        const socialTaskActioned = {};
+        // Track which tasks are completed (from DB)
+        const socialTaskCompleted = {};
+        // Track Twitter OAuth connection status
+        let twitterConnected = false;
+        let twitterUsername = localStorage.getItem('dr_twitter_username') || '';
+
+        // ── Load Social Tasks ──
+        async function loadSocialTasks() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('social_tasks')
+                    .select('task_type, points_awarded, completed_at')
+                    .eq('wallet', wallet.toLowerCase());
+
+                if (error) {
+                    console.log('Social tasks table may not exist yet:', error.message);
+                    return;
+                }
+
+                let completedCount = 0;
+                (data || []).forEach(task => {
+                    socialTaskCompleted[task.task_type] = true;
+                    completedCount++;
+                    const el = document.getElementById(`task-${task.task_type}`);
+                    if (el) {
+                        el.classList.add('completed');
+                        const btn = el.querySelector('.btn-task');
+                        if (btn) {
+                            btn.className = 'btn-task done';
+                            btn.textContent = 'Completed ✓';
+                            btn.onclick = null;
+                        }
+                    }
+                });
+
+                updateSocialProgress(completedCount);
+            } catch (e) {
+                console.log('Could not load social tasks:', e);
+            }
+        }
+
+        function updateSocialProgress(count) {
+            const total = 4;
+            const pct = Math.round((count / total) * 100);
+            document.getElementById('socialProgressFill').style.width = pct + '%';
+            document.getElementById('socialProgressText').textContent = `${count}/${total} tasks completed`;
+            document.getElementById('socialTasksBadge').textContent = `${count}/${total} Done`;
+        }
+
+        // ── Verification timer duration (seconds) ──
+        const VERIFY_TIMER_SECONDS = 30;
+
+        // ── Do Social Task ──
+        async function doSocialTask(taskType) {
+            if (socialTaskCompleted[taskType]) return;
+
+            // Twitter Connect uses OAuth authorization
+            if (taskType === 'twitter_connect') {
+                await connectTwitterOAuth();
+                return;
+            }
+
+            // Other Twitter tasks require twitter_connect first
+            if (['twitter_follow', 'twitter_retweet', 'twitter_like'].includes(taskType)) {
+                if (!twitterConnected && !socialTaskCompleted['twitter_connect']) {
+                    showTaskToast('Connect Twitter first!', true);
+                    return;
+                }
+            }
+
+            const config = SOCIAL_TASK_CONFIG[taskType];
+            if (!config) return;
+
+            // Open Twitter intent link in new tab
+            window.open(config.url, '_blank');
+
+            // Start verification countdown timer
+            socialTaskActioned[taskType] = true;
+            startVerifyCountdown(taskType);
+        }
+
+        // ── Verification Countdown Timer ──
+        function startVerifyCountdown(taskType) {
+            const el = document.getElementById(`task-${taskType}`);
+            if (!el) return;
+            const btn = el.querySelector('.btn-task');
+            if (!btn) return;
+
+            let remaining = VERIFY_TIMER_SECONDS;
+
+            // Disable button and show countdown
+            btn.className = 'btn-task loading';
+            btn.textContent = `⏳ Verifying... ${remaining}s`;
+            btn.onclick = null;
+            btn.disabled = true;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining > 0) {
+                    btn.textContent = `⏳ Verifying... ${remaining}s`;
+                } else {
+                    clearInterval(interval);
+                    // Timer done — allow claiming
+                    btn.disabled = false;
+                    btn.className = 'btn-task claim';
+                    btn.textContent = '✅ Verify & Claim';
+                    btn.onclick = () => claimSocialTask(taskType);
+                }
+            }, 1000);
+        }
+
+        // ── Twitter OAuth Connect ──
+        async function connectTwitterOAuth() {
+            const el = document.getElementById('task-twitter_connect');
+            const btn = el ? el.querySelector('.btn-task') : null;
+
+            // Show loading state
+            if (btn) {
+                btn.className = 'btn-task loading';
+                btn.textContent = 'Connecting...';
+            }
+
+            try {
+                const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
+                    provider: 'twitter',
+                    options: {
+                        redirectTo: window.location.origin + '/quest.html'
+                    }
+                });
+
+                if (error) throw error;
+                // Browser will redirect to Twitter authorize page
+            } catch (e) {
+                console.error('Twitter OAuth error:', e);
+                showTaskToast('Failed to connect Twitter. Try again.', true);
+                if (btn) {
+                    btn.className = 'btn-task action';
+                    btn.textContent = 'Connect';
+                    btn.onclick = () => doSocialTask('twitter_connect');
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════
+        // ── NFT MINT BADGE — Base Network (ERC-721) ──
+        // ══════════════════════════════════════════════
+
+        // ⚠️ IMPORTANT: Update this after deploying ZicoRushBadge.sol to Base
+        const NFT_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // ← REPLACE with deployed contract address
+        const BASE_CHAIN_ID = 8453;
+        const BASE_CHAIN_ID_HEX = '0x2105';
+        const MINT_FEE_USD = 2; // $2 fee
+
+        // Minimal ABI for ZicoRushBadge contract
+        const NFT_ABI = [
+            'function mint() external payable',
+            'function hasMinted(address) view returns (bool)',
+            'function mintPrice() view returns (uint256)',
+            'function totalSupply() view returns (uint256)',
+            'function mintEnabled() view returns (bool)',
+            'function balanceOf(address) view returns (uint256)'
+        ];
+
+        let cachedEthPrice = null;
+        let cachedEthPriceTime = 0;
+
+        // ── Fetch ETH/USD price ──
+        async function getEthPrice() {
+            // Cache for 60 seconds
+            if (cachedEthPrice && Date.now() - cachedEthPriceTime < 60000) {
+                return cachedEthPrice;
+            }
+            try {
+                const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+                const data = await resp.json();
+                cachedEthPrice = data.ethereum.usd;
+                cachedEthPriceTime = Date.now();
+                return cachedEthPrice;
+            } catch (e) {
+                console.warn('CoinGecko price fetch failed, using fallback:', e);
+                return 2000; // Fallback ~$2000/ETH
+            }
+        }
+
+        // ── Show fee in ETH on load ──
+        async function updateMintFeeDisplay() {
+            try {
+                const ethPrice = await getEthPrice();
+                const ethAmount = (MINT_FEE_USD / ethPrice).toFixed(6);
+                const feeEl = document.getElementById('mintFeeEth');
+                if (feeEl) feeEl.textContent = ethAmount;
+            } catch (e) {
+                const feeEl = document.getElementById('mintFeeEth');
+                if (feeEl) feeEl.textContent = '~0.001';
+            }
+        }
+
+        // ── Switch to Base Network ──
+        async function switchToBase(provider) {
+            try {
+                await provider.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: BASE_CHAIN_ID_HEX }]
+                });
+            } catch (switchError) {
+                // Chain not added yet — add it
+                if (switchError.code === 4902 || switchError.message?.includes('Unrecognized chain')) {
+                    await provider.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: BASE_CHAIN_ID_HEX,
+                            chainName: 'Base',
+                            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                            rpcUrls: ['https://mainnet.base.org'],
+                            blockExplorerUrls: ['https://basescan.org']
+                        }]
+                    });
+                } else {
+                    throw switchError;
+                }
+            }
+        }
+
+        // ── Mark UI as minted ──
+        function markMintedUI() {
+            const btn = document.getElementById('btnMintBadge');
+            if (btn) {
+                btn.textContent = '✅ MINTED';
+                btn.style.background = 'rgba(34, 197, 94, 0.12)';
+                btn.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+                btn.style.color = '#22c55e';
+                btn.style.boxShadow = 'none';
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '1';
+            }
+            const badge = document.getElementById('mintStatusBadge');
+            if (badge) {
+                badge.textContent = 'Owned';
+                badge.style.background = 'rgba(34, 197, 94, 0.12)';
+                badge.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                badge.style.color = '#22c55e';
+            }
+            document.getElementById('wlBadge').style.display = 'inline-flex';
+            toggle('ach1', true); // Unlock Mint NFT achievement
+        }
+
+        // ── Mint Badge (On-Chain ERC-721 on Base) ──
+        async function mintBadge() {
+            if (!walletState.connected || !walletState.wallet) {
+                alert('Please connect your wallet first.');
+                return;
+            }
+
+            if (NFT_CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
+                alert('NFT contract belum di-deploy. Hubungi admin.');
+                return;
+            }
+
+            const btn = document.getElementById('btnMintBadge');
+            const errorText = document.getElementById('mintErrorText');
+            const txInfo = document.getElementById('mintTxInfo');
+
+            errorText.style.display = 'none';
+            txInfo.style.display = 'none';
+            btn.textContent = '⏳ PREPARING...';
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.7';
+
+            try {
+                // 1. Get wallet provider
+                let provider;
+                if (window.appKitModal && window.appKitModal.getWalletProvider) {
+                    provider = window.appKitModal.getWalletProvider();
+                }
+                if (!provider && window.ethereum) {
+                    provider = window.ethereum;
+                }
+                if (!provider) {
+                    throw new Error('Wallet provider not found. Please reconnect your wallet.');
+                }
+
+                // 2. Switch to Base network
+                btn.textContent = '⛓️ SWITCHING TO BASE...';
+                await switchToBase(provider);
+
+                // 3. Create ethers provider & signer
+                const ethersProvider = new ethers.BrowserProvider(provider);
+                const signer = await ethersProvider.getSigner();
+                const signerAddress = await signer.getAddress();
+
+                // 4. Connect to NFT contract
+                const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, signer);
+
+                // 5. Check if already minted on-chain
+                btn.textContent = '🔍 CHECKING...';
+                const alreadyMinted = await nftContract.hasMinted(signerAddress);
+                if (alreadyMinted) {
+                    markMintedUI();
+                    btn.textContent = '✅ ALREADY MINTED';
+                    showTaskToast('Badge already minted on-chain!', false);
+                    return;
+                }
+
+                // 6. Get mint price from contract
+                const mintPrice = await nftContract.mintPrice();
+
+                // Show price in ETH
+                const priceEth = ethers.formatEther(mintPrice);
+                btn.textContent = `💎 MINTING (${priceEth} ETH)...`;
+
+                // 7. Send mint transaction
+                const tx = await nftContract.mint({ value: mintPrice });
+
+                // Show tx hash
+                btn.textContent = '⏳ CONFIRMING TX...';
+                const txLink = document.getElementById('mintTxLink');
+                txLink.href = `https://basescan.org/tx/${tx.hash}`;
+                txLink.textContent = tx.hash.slice(0, 10) + '...' + tx.hash.slice(-8);
+                txInfo.style.display = 'block';
+
+                // 8. Wait for confirmation
+                const receipt = await tx.wait();
+                console.log('Mint tx confirmed:', receipt);
+
+                // 9. Call Supabase edge function to record mint & award points
+                btn.textContent = '🎯 AWARDING POINTS...';
+                try {
+                    const response = await fetch('https://xtiryhqorgvqksqnggnj.supabase.co/functions/v1/mint-badge', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            wallet: walletState.wallet.toLowerCase(),
+                            txHash: tx.hash
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.points_awarded) {
+                        let currentPoints = parseInt(localStorage.getItem('dr_points') || '0');
+                        currentPoints += data.points_awarded;
+                        document.getElementById('statPoints').textContent = fmtNum(currentPoints);
+                        localStorage.setItem('dr_points', currentPoints.toString());
+                    }
+                } catch (edgeErr) {
+                    console.warn('Edge function call failed (mint still succeeded on-chain):', edgeErr);
+                }
+
+                // 10. Success UI
+                markMintedUI();
+                btn.textContent = '✅ MINTED';
+                showTaskToast('🎉 NFT Badge minted successfully! +100K Points', false);
+
+            } catch (err) {
+                console.error('Mint error:', err);
+                const msg = err.reason || err.message || 'Minting failed';
+
+                // User rejected
+                if (err.code === 4001 || err.code === 'ACTION_REJECTED' || msg.includes('user rejected') || msg.includes('User denied')) {
+                    errorText.textContent = 'Transaction cancelled by user.';
+                } else if (msg.includes('Already minted') || msg.includes('already minted')) {
+                    markMintedUI();
+                    btn.textContent = '✅ ALREADY MINTED';
+                    errorText.textContent = '';
+                    errorText.style.display = 'none';
+                    return;
+                } else if (msg.includes('insufficient funds') || msg.includes('Insufficient')) {
+                    errorText.textContent = 'Insufficient ETH balance on Base network.';
+                } else {
+                    errorText.textContent = msg.length > 100 ? msg.slice(0, 100) + '...' : msg;
+                }
+
+                errorText.style.display = 'block';
+                btn.textContent = '💎 MINT BADGE NOW';
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+            }
+        }
+
+        // ── Check Mint Status (DB + On-Chain) ──
+        async function checkMintBadgeStatus() {
+            if (!walletState.connected || !walletState.wallet) return;
+
+            // Update fee display
+            updateMintFeeDisplay();
+
+            // Check Supabase DB first (fast)
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('social_tasks')
+                    .select('task_type')
+                    .eq('wallet', walletState.wallet.toLowerCase())
+                    .eq('task_type', 'mint_badge')
+                    .maybeSingle();
+
+                if (data) {
+                    markMintedUI();
+                    return;
+                }
+            } catch (e) {
+                console.log('DB mint check error:', e);
+            }
+
+            // Also check on-chain if contract is deployed
+            if (NFT_CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000') {
+                try {
+                    const rpcProvider = new ethers.JsonRpcProvider('https://mainnet.base.org');
+                    const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, rpcProvider);
+                    const minted = await nftContract.hasMinted(walletState.wallet);
+                    if (minted) {
+                        markMintedUI();
+                    }
+                } catch (e) {
+                    console.log('On-chain mint check error:', e);
+                }
+            }
+        }
+
+        // ── Handle Twitter OAuth Callback ──
+        async function handleTwitterOAuthCallback() {
+            try {
+                // Check if we have an active Supabase Auth session (from Twitter OAuth)
+                const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+
+                if (error) {
+                    console.log('Auth session check error:', error);
+                    return;
+                }
+
+                if (session && session.user) {
+                    const user = session.user;
+                    const twitterMeta = user.user_metadata || {};
+
+                    // Check if this is a Twitter login
+                    if (user.app_metadata?.provider === 'twitter' || twitterMeta.provider_id) {
+                        twitterConnected = true;
+                        twitterUsername = twitterMeta.preferred_username || twitterMeta.user_name || twitterMeta.full_name || '';
+                        // Store Twitter user ID (for anti-cheat: 1 Twitter account per wallet)
+                        const twitterUserId = twitterMeta.provider_id || user.id || '';
+                        localStorage.setItem('dr_twitter_username', twitterUsername);
+                        localStorage.setItem('dr_twitter_user_id', twitterUserId);
+
+                        // Update UI for twitter_connect task
+                        const el = document.getElementById('task-twitter_connect');
+                        if (el) {
+                            const nameDiv = el.querySelector('.task-desc');
+                            if (nameDiv && twitterUsername) {
+                                nameDiv.textContent = `Connected as @${twitterUsername}`;
+                            }
+                        }
+
+                        // Auto-complete twitter_connect if not already completed
+                        if (!socialTaskCompleted['twitter_connect']) {
+                            // Mark as actioned and auto-claim
+                            socialTaskActioned['twitter_connect'] = true;
+                            await claimSocialTask('twitter_connect');
+                        }
+
+                        console.log('Twitter connected:', twitterUsername, 'ID:', twitterUserId);
+                    }
+                }
+            } catch (e) {
+                console.log('OAuth callback handling error:', e);
+            }
+
+            // Also check localStorage for previously connected Twitter
+            if (!twitterConnected && localStorage.getItem('dr_twitter_username')) {
+                twitterConnected = true;
+                const el = document.getElementById('task-twitter_connect');
+                if (el && !socialTaskCompleted['twitter_connect']) {
+                    const nameDiv = el.querySelector('.task-desc');
+                    if (nameDiv) {
+                        nameDiv.textContent = `Connected as @${localStorage.getItem('dr_twitter_username')}`;
+                    }
+                }
+            }
+        }
+
+        // ── Claim Social Task ──
+        async function claimSocialTask(taskType) {
+            if (socialTaskCompleted[taskType]) return;
+
+            const el = document.getElementById(`task-${taskType}`);
+            const btn = el ? el.querySelector('.btn-task') : null;
+
+            // Show loading
+            if (btn) {
+                btn.className = 'btn-task loading';
+                btn.textContent = 'Claiming...';
+            }
+
+            try {
+                const resp = await fetch(
+                    `${SUPABASE_URL}/functions/v1/complete-social-task`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        },
+                        body: JSON.stringify({
+                            wallet: wallet.toLowerCase(),
+                            task_type: taskType,
+                            twitter_user_id: localStorage.getItem('dr_twitter_user_id') || '',
+                            twitter_username: localStorage.getItem('dr_twitter_username') || ''
+                        })
+                    }
+                );
+
+                const result = await resp.json();
+
+                if (!resp.ok) {
+                    throw new Error(result.error || 'Failed to claim');
+                }
+
+                // Mark as completed
+                socialTaskCompleted[taskType] = true;
+                if (el) {
+                    el.classList.add('completed');
+                    if (btn) {
+                        btn.className = 'btn-task done';
+                        btn.textContent = 'Completed ✓';
+                        btn.onclick = null;
+                    }
+                }
+
+                // Update points display
+                if (result.new_points !== undefined) {
+                    document.getElementById('statPoints').textContent = fmtNum(result.new_points);
+                    localStorage.setItem('dr_points', result.new_points);
+                }
+
+                // Update progress
+                const completedCount = Object.keys(socialTaskCompleted).length;
+                updateSocialProgress(completedCount);
+
+                // Show quick toast
+                showTaskToast(`+${SOCIAL_TASK_CONFIG[taskType].points} Points earned! 🎉`);
+
+            } catch (e) {
+                console.error('Claim social task error:', e);
+
+                // Handle specific edge case: Task already completed on server, but not locally
+                if (e.message && e.message.toLowerCase().includes('already completed')) {
+                    socialTaskCompleted[taskType] = true;
+                    if (el) {
+                        el.classList.add('completed');
+                        if (btn) {
+                            btn.className = 'btn-task done';
+                            btn.textContent = 'Completed ✓';
+                            btn.onclick = null;
+                        }
+                    }
+                    showTaskToast('Task already completed!', false);
+                    return;
+                }
+
+                // Revert button to claim state based on task type (only if actually failed)
+                if (btn) {
+                    if (taskType === 'twitter_connect') {
+                        // If we are already connected but claim failed, keep it looking connected
+                        if (twitterConnected) {
+                            btn.className = 'btn-task claim';
+                            btn.textContent = '✅ Verify & Claim';
+                            btn.onclick = () => claimSocialTask(taskType);
+                        } else {
+                            btn.className = 'btn-task action';
+                            btn.textContent = 'Connect';
+                            btn.onclick = () => doSocialTask(taskType);
+                        }
+                    } else {
+                        btn.className = 'btn-task claim';
+                        btn.textContent = '✅ Verify & Claim';
+                        btn.onclick = () => claimSocialTask(taskType);
+                    }
+                }
+                showTaskToast('Failed to claim. Try again.', true);
+            }
+        }
+
+        // ── Toast notification ──
+        function showTaskToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+                padding: 0.75rem 1.5rem; border-radius: 12px; z-index: 999;
+                font-family: 'Space Grotesk', monospace; font-size: 0.75rem; font-weight: 700;
+                backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+                animation: toastSlide 0.3s ease-out;
+                ${isError
+                    ? 'background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444;'
+                    : 'background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #22c55e;'
+                }
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // ── Copy actions ──
+        function copyRefCode() {
+            const code = document.getElementById('refCode').textContent;
+            if (!code || code === '—') return;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.btn-copy');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+            });
+        }
+
+        function copyWallet() {
+            if (!wallet) return;
+            navigator.clipboard.writeText(wallet).then(() => {
+                const el = document.querySelector('.copy-icon');
+                el.textContent = '✅';
+                setTimeout(() => { el.textContent = '📋'; }, 1500);
+            });
+        }
+
+        // ── Disconnect ──
+        function disconnectWallet() {
+            if (confirm('Are you sure you want to disconnect your wallet?')) {
+                try { if (window.appKitModal && window.appKitModal.disconnect) window.appKitModal.disconnect(); } catch(e) {}
+                localStorage.removeItem('dr_wallet');
+                localStorage.removeItem('dr_demo');
+                localStorage.removeItem('dr_username');
+                localStorage.removeItem('dr_referralCode');
+                localStorage.removeItem('dr_points');
+                localStorage.removeItem('dr_currentLevel');
+                
+                // Force clear wagmi/appkit cache so it doesn't auto-reconnect
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('@w3m') || key.toLowerCase().startsWith('wagmi') || key.startsWith('@appkit')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.warn('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
