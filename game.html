@@ -368,57 +368,63 @@
 
         .menu-subtitle {
             font-size: 0.7rem;
-            color: #64748b;
+            color: #ffffff;
             letter-spacing: 0.15em;
             text-transform: uppercase;
             margin-top: 0.2rem;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            font-weight: 700;
         }
 
         /* Player info */
         .player-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(168, 85, 247, 0.15);
-            border-radius: 16px;
-            padding: 1rem 1.25rem;
+            background: url('assets/sprites/card21.png') center/100% 100% no-repeat;
+            background-color: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 1rem 1.5rem 1rem 3.5rem;
             margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 1rem;
         }
 
         .player-avatar {
             width: 44px;
             height: 44px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(6, 182, 212, 0.25));
-            border: 1px solid rgba(168, 85, 247, 0.3);
+            background: transparent;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
+            font-size: 1.8rem;
             flex-shrink: 0;
         }
 
         .player-info {
             flex: 1;
             min-width: 0;
+            text-align: left;
         }
 
         .player-name {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 0.95rem;
             font-weight: 700;
-            color: #c084fc;
+            color: #ffffff;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
         }
 
         .player-wallet {
             font-size: 0.6rem;
-            color: #475569;
+            color: #94a3b8;
             font-family: monospace;
             margin-top: 0.15rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
         }
 
         /* Stats row */
@@ -430,24 +436,25 @@
         }
 
         .stat-chip {
-            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(9, 9, 11, 0.8));
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 16px;
-            padding: 1rem 0.75rem;
+            flex: 1;
+            background-color: transparent;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 100% 100%;
+            border: none;
+            border-radius: 0;
+            padding: 1.25rem 0.5rem 0.75rem;
             text-align: center;
             position: relative;
             overflow: hidden;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .stat-chip::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--chip-color, #8b5cf6);
-            opacity: 0.7;
+            display: none;
         }
 
         .chip-val {
@@ -459,10 +466,12 @@
 
         .chip-label {
             font-size: 0.55rem;
-            color: #64748b;
+            color: #ffffff;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.12em;
             margin-top: 0.2rem;
+            font-weight: 800;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
 
         /* Buttons */
@@ -550,11 +559,13 @@
         }
         .char-sel-title {
             font-size: 0.7rem;
-            color: #94a3b8;
+            color: #ffffff;
             letter-spacing: 0.1em;
             text-transform: uppercase;
             margin-bottom: 0.5rem;
             text-align: center;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            font-weight: 800;
         }
         .char-opts {
             display: flex;
@@ -608,17 +619,19 @@
             align-items: center;
             gap: 0.3rem;
             font-size: 0.62rem;
-            color: #475569;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            font-weight: 600;
         }
 
         .htp-key {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 5px;
             padding: 0.15rem 0.4rem;
             font-family: monospace;
             font-size: 0.6rem;
-            color: #94a3b8;
+            color: #ffffff;
         }
 
         /* ════════════════════════════════════════════════
@@ -719,22 +732,22 @@
 
             <!-- Player info -->
             <div class="player-card">
-                <div class="player-avatar" id="menuAvatar">👤</div>
                 <div class="player-info">
                     <div class="player-name" id="menuUsername">Player</div>
                     <div class="player-wallet" id="menuWallet">Not Connected</div>
                 </div>
+                <div class="player-avatar" id="menuAvatar">👤</div>
             </div>
 
             <!-- Stats -->
             <div class="stats-chips">
-                <div class="stat-chip" style="--chip-color: #a855f7">
-                    <div class="chip-val" id="menuPoints">0</div>
-                    <div class="chip-label">Total Points</div>
+                <div class="stat-chip" style="background-image: url('assets/sprites/card1.png'); padding-top: 1.5rem;">
+                    <div class="chip-val" id="menuPoints" style="color: #ffffff; text-shadow: 0 2px 14px rgba(0,0,0,0.8);">0</div>
+                    <div class="chip-label" style="color: #ffffff; font-weight: 800; text-shadow: 0 1px 6px rgba(0,0,0,0.7); letter-spacing: 0.1em;">Total Points</div>
                 </div>
-                <div class="stat-chip" style="--chip-color: #ef4444">
-                    <div class="chip-val" id="menuLives">3</div>
-                    <div class="chip-label">Lives</div>
+                <div class="stat-chip" style="background-image: url('assets/sprites/card1.png'); padding-top: 1.5rem;">
+                    <div class="chip-val" id="menuLives" style="color: #ffffff; text-shadow: 0 2px 14px rgba(0,0,0,0.8);">3</div>
+                    <div class="chip-label" style="color: #ffffff; font-weight: 800; text-shadow: 0 1px 6px rgba(0,0,0,0.7); letter-spacing: 0.1em;">Lives</div>
                 </div>
             </div>
 
