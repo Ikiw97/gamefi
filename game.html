@@ -317,26 +317,18 @@
             background: linear-gradient(160deg,
                     rgba(24, 24, 27, 0.7) 0%,
                     rgba(15, 23, 42, 0.85) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 28px;
-            padding: 2.5rem 2rem 2rem;
+            border: 30px solid transparent;
+            border-image: url('assets/sprites/frame.png') 120 fill stretch;
+            border-radius: 0;
+            padding: 1.5rem 1.5rem 1rem;
             backdrop-filter: blur(32px);
             -webkit-backdrop-filter: blur(32px);
             box-shadow:
-                0 24px 60px rgba(0, 0, 0, 0.7),
-                inset 0 1px 0 rgba(255, 255, 255, 0.08),
-                0 0 0 1px rgba(139, 92, 246, 0.05);
+                0 24px 60px rgba(0, 0, 0, 0.7);
         }
 
         .menu-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 10%;
-            right: 10%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #a855f7, #06b6d4, transparent);
-            border-radius: 0 0 4px 4px;
+            display: none;
         }
 
         /* Logo */
