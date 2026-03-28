@@ -29,7 +29,7 @@
             background: #030712;
             min-height: 100vh;
             font-family: 'Space Grotesk', sans-serif;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         /* ── GAME CANVAS CONTAINER (hidden during menu) ── */
@@ -258,7 +258,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
         .menu-bg {
@@ -270,6 +270,12 @@
                 url('assets/sprites/bggame.png') no-repeat center center;
             background-size: cover;
             z-index: 0;
+            animation: bgBreathe 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgBreathe {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.05); opacity: 1; }
         }
 
         .menu-grid-overlay {
