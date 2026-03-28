@@ -314,17 +314,12 @@
             width: 100%;
             max-width: 420px;
             margin: 2rem 1rem;
-            background: linear-gradient(160deg,
-                    rgba(24, 24, 27, 0.7) 0%,
-                    rgba(15, 23, 42, 0.85) 100%);
+            background: transparent;
             border: 30px solid transparent;
             border-image: url('assets/sprites/frame.png') 120 fill stretch;
             border-radius: 0;
             padding: 1.5rem 1.5rem 1rem;
-            backdrop-filter: blur(32px);
-            -webkit-backdrop-filter: blur(32px);
-            box-shadow:
-                0 24px 60px rgba(0, 0, 0, 0.7);
+            box-shadow: none;
         }
 
         .menu-card::before {
@@ -472,9 +467,10 @@
 
         /* Buttons */
         .menu-btn {
+            background-color: transparent;
             width: 100%;
             padding: 1rem 1.5rem;
-            border-radius: 16px;
+            border-radius: 0;
             border: none;
             cursor: pointer;
             font-family: 'Space Grotesk', sans-serif;
@@ -493,12 +489,7 @@
         }
 
         .menu-btn::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, transparent 50%);
-            opacity: 0;
-            transition: opacity 0.25s;
+            display: none;
         }
 
         .menu-btn:hover {
@@ -515,34 +506,38 @@
 
         .menu-btn.primary {
             background: url('assets/sprites/card/card1.png') center/100% 100% no-repeat;
+            background-color: transparent;
             color: white;
-            box-shadow: 0 6px 24px rgba(168, 85, 247, 0.45);
+            box-shadow: none;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
         }
 
         .menu-btn.primary:hover {
-            box-shadow: 0 10px 35px rgba(168, 85, 247, 0.65);
+            box-shadow: none;
         }
 
         .menu-btn.secondary {
             background: url('assets/sprites/card/card2.png') center/100% 100% no-repeat;
+            background-color: transparent;
             border: none;
             color: white;
-            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.15);
+            box-shadow: none;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
         }
 
         .menu-btn.secondary:hover {
-            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.3);
+            box-shadow: none;
         }
 
         .menu-btn.ghost {
             background: url('assets/sprites/card/card3.png') center/100% 100% no-repeat;
+            background-color: transparent;
             border: none;
             color: #e2e8f0;
             font-size: 0.75rem;
             padding: 0.75rem;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+            box-shadow: none;
         }
 
         .menu-btn.ghost:hover {
