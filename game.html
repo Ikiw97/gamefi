@@ -23,13 +23,13 @@
     <!-- Ethers v6 for wallet support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
     <style>
-        body {
+        html, body {
             margin: 0;
             padding: 0;
             background: #030712;
             min-height: 100vh;
             font-family: 'Space Grotesk', sans-serif;
-            overflow: hidden;
+            overflow: hidden !important;
         }
 
         /* ── GAME CANVAS CONTAINER (hidden during menu) ── */
@@ -650,7 +650,7 @@
             display: none;
             align-items: center;
             justify-content: center;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
         .result-card {
