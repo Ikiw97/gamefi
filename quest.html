@@ -377,38 +377,33 @@
         }
 
         .stat-card {
-            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(9, 9, 11, 0.8));
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 1.5rem 1rem;
+            background-color: transparent;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 100% 100%;
+            border: none;
+            border-radius: 0;
+            padding: 1.5rem 1rem 0.75rem;
             text-align: center;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100px;
         }
 
         .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--stat-accent, #a855f7);
-            opacity: 0.5;
-            transition: opacity 0.3s;
+            display: none;
         }
 
         .stat-card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--stat-accent, rgba(139, 92, 246, 0.15));
+            transform: translateY(-3px) scale(1.02);
         }
 
         .stat-card:hover::before {
-            opacity: 1;
+            display: none;
         }
 
         .stat-card .s-icon {
@@ -428,9 +423,11 @@
 
         .stat-card .s-label {
             font-size: 0.58rem;
-            color: #64748b;
+            color: #ffffff;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.12em;
+            font-weight: 700;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
 
         /* ───── TWO-COLUMN GRID ───── */
@@ -1160,23 +1157,23 @@
 
                 <!-- Stats Grid -->
                 <div class="stats-row">
-                    <div class="stat-card" style="--stat-accent: #a855f7">
+                    <div class="stat-card" style="background-image: url('assets/sprites/card/card1.png'); --stat-accent: #f8fafc">
                         <div class="s-icon"><i class="ph-fill ph-sparkle"></i></div>
                         <div class="s-value" id="statPoints">0</div>
                         <div class="s-label">Points</div>
                     </div>
-                    <div class="stat-card" style="--stat-accent: #38bdf8">
+                    <div class="stat-card" style="background-image: url('assets/sprites/card/card2.png'); --stat-accent: #f8fafc">
                         <div class="s-icon"><i class="ph-fill ph-coin"></i></div>
                         <div class="s-value" id="statCoins">0</div>
                         <div class="s-label">Coins</div>
                     </div>
-                    <div class="stat-card" style="--stat-accent: #22c55e">
+                    <div class="stat-card" style="background-image: url('assets/sprites/card/card3.png'); --stat-accent: #f8fafc">
                         <div class="s-icon"><i class="ph-fill ph-trophy"></i></div>
                         <div class="s-value" id="statRank">—</div>
                         <div class="s-label">Rank</div>
                     </div>
-                    <div class="stat-card" style="--stat-accent: #06b6d4">
-                        <div class="s-icon"><i class="ph-fill ph-game-controller"></i></div>
+                    <div class="stat-card" style="background-image: url('assets/sprites/card/card2.png'); --stat-accent: #f8fafc">
+                        <div class="s-icon" style="color: #ffffff; text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);"><i class="ph-fill ph-game-controller"></i></div>
                         <div class="s-value" id="statGames">0</div>
                         <div class="s-label">Games</div>
                     </div>
