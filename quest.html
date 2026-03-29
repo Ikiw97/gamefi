@@ -144,6 +144,21 @@
             box-shadow: 0 0 8px #22c55e;
         }
 
+        .nav-wallet-badge .disconnect-icon {
+            margin-left: 0.5rem;
+            padding: 2px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            color: #ff4b91;
+            display: none;
+            font-size: 1rem;
+        }
+
+        .nav-wallet-badge .disconnect-icon:hover {
+            background: rgba(239, 68, 68, 0.15);
+            transform: scale(1.1);
+        }
+
         .nav-mobile-links {
             display: none;
             align-items: center;
@@ -1380,6 +1395,7 @@
         <div class="nav-wallet-badge disconnected" id="navWalletBadge">
             <div class="dot"></div>
             <span id="navWalletAddr">Not Connected</span>
+            <i class="ph-bold ph-sign-out disconnect-icon" id="navDisconnectIcon" onclick="disconnectWallet()" title="Disconnect"></i>
         </div>
 
         <div class="nav-mobile-links" style="border-bottom: none;">
@@ -1734,6 +1750,7 @@
             const navBadge = document.getElementById('navWalletBadge');
             navBadge.classList.remove('disconnected');
             document.getElementById('navWalletAddr').textContent = maskAddr(wallet);
+            document.getElementById('navDisconnectIcon').style.display = 'inline-block';
 
             // Load from localStorage first (instant)
             const username = localStorage.getItem('dr_username') || 'Player';
