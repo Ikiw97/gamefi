@@ -78,11 +78,48 @@
 
         body {
             font-family: var(--font-pixel);
-            background: radial-gradient(circle at center, var(--bg-mid) 0%, var(--bg-dark) 80%);
+            background-color: var(--bg-dark);
             color: var(--text-light);
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
+        }
+
+        /* ── Web3 Mesh Gradient Background ── */
+        .bg-animated {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%),
+                radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.1), transparent 30%),
+                linear-gradient(rgba(9, 9, 11, 0.75), rgba(9, 9, 11, 0.85)),
+                url('assets/sprites/bggame.png');
+            background-size: cover;
+            background-position: center;
+            animation: bgBreathe 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgBreathe {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* ── Web3 Grid Overlay ── */
+        .stars {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center;
+            mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, transparent 80%);
         }
 
         /* ── BRICK BORDERS (Left & Right) ── */
@@ -373,8 +410,8 @@
         }
 
         .hero-coin-logo {
-            width: 100px;
-            height: 100px;
+            width: 130px;
+            height: auto;
             image-rendering: pixelated;
             filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
         }
@@ -1145,8 +1182,8 @@
             }
 
             .hero-coin-logo {
-                width: 55px;
-                height: 55px;
+                width: 75px;
+                height: auto;
             }
 
             .hero-title-group {
@@ -1331,8 +1368,8 @@
             }
 
             .hero-coin-logo {
-                width: 45px;
-                height: 45px;
+                width: 60px;
+                height: auto;
             }
 
             .pickaxe-icon-container {
@@ -1374,6 +1411,8 @@
 
 <body>
     <!-- Background Decor -->
+    <div class="bg-animated"></div>
+    <div class="stars"></div>
     <div class="brick-border left"></div>
     <div class="brick-border right"></div>
 
@@ -1395,7 +1434,6 @@
     <!-- ───── NAVBAR ───── -->
     <nav class="navbar">
         <a href="index.html" class="nav-brand">
-            <i class="ph-fill ph-sketch-logo brand-icon" style="color: #4fc3f7;"></i>
             <span class="brand-text">ZICO RUSH</span>
         </a>
 
@@ -1403,7 +1441,7 @@
             <a href="index.html" class="nav-link active"><i class="ph-fill ph-house"></i> Home</a>
             <a href="game.html" class="nav-link"><i class="ph-fill ph-game-controller"></i> Play</a>
             <a href="leaderboard.html" class="nav-link"><i class="ph-fill ph-trophy"></i> Leaderboard</a>
-            <a href="profile.html" class="nav-link"><i class="ph-fill ph-user"></i> Profile</a>
+            <a href="quest.html" class="nav-link"><i class="ph-fill ph-user"></i> Quest</a>
         </div>
 
         <div class="nav-wallet-badge" id="navWalletBtn" onclick="connectWallet()">
@@ -1418,7 +1456,7 @@
                     class="ph-fill ph-game-controller" style="color:#94a3b8;"></i></a>
             <a href="leaderboard.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
                     class="ph-fill ph-trophy" style="color:#94a3b8;"></i></a>
-            <a href="profile.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+            <a href="quest.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
                     class="ph-fill ph-user" style="color:#94a3b8;"></i></a>
         </div>
     </nav>
@@ -1433,12 +1471,12 @@
                 </div>
                 <div class="hero-title-group">
                     <h1 class="pixel-title">ZICO<br>RUSH</h1>
-                    <img src="assets/sprites/coin.png" class="hero-coin-logo" alt="Zico Coin">
+                    <img src="assets/sprites/logos.png" class="hero-coin-logo" alt="Zico Coin">
                 </div>
                 <p>Play • Mine • Earn • Airdrop</p>
                 <div class="hero-tags">
-                    <span class="tag tag-orange"><i class="ph-fill ph-coin"></i> AIRDROP SEASON 1 - LAJS</span>
-                    <span class="tag tag-blue"><i class="ph-fill ph-link"></i> FVM CHAIN</span>
+                    <span class="tag tag-orange"><i class="ph-fill ph-coin"></i> AIRDROP SEASON 1</span>
+                    <span class="tag tag-blue"><i class="ph-fill ph-link"></i> BASE CHAIN</span>
                     <span class="tag tag-green"><i class="ph-fill ph-check-circle"></i> FREE TO PLAY</span>
                 </div>
             </div>
@@ -1707,8 +1745,11 @@
             if (btn) btn.style.display = 'flex';
             if (btnText) btnText.textContent = shortW || 'Wallet Connected';
 
-            // Highlight button as connected
-            if (btn) btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+            // Use connect.png image instead of green background
+            if (btn) {
+                btn.style.background = "url('assets/sprites/connect.png') no-repeat center center";
+                btn.style.backgroundSize = "100% 100%";
+            }
 
             // Hide the separate display element to avoid redundancy
             if (disp) disp.style.display = 'none';
@@ -1729,12 +1770,25 @@
             // Reset form
             document.getElementById('regUsername').value = '';
             document.getElementById('regUsername').className = 'reg-input';
-            document.getElementById('regReferral').value = '';
+            
+            // Auto-populate referral code if present in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref');
+            const refInput = document.getElementById('regReferral');
+            if (refCode) {
+                refInput.value = refCode.toUpperCase();
+            } else {
+                refInput.value = '';
+            }
+            
             document.getElementById('regCaptchaA').value = '';
             document.getElementById('regCaptchaA').className = 'reg-input';
             document.getElementById('regSubmitBtn').disabled = true;
             document.getElementById('regMsg').className = 'reg-msg';
+            document.getElementById('regMsg').textContent = '';
             document.getElementById('regModal').classList.add('open');
+            _isUnameTaken = false;
+            if (_unameCheckTimeout) clearTimeout(_unameCheckTimeout);
 
             // Wire live validation
             document.getElementById('regUsername').oninput = validateRegForm;
@@ -1744,18 +1798,65 @@
             };
         }
 
+        let _unameCheckTimeout = null;
+        let _isUnameTaken = false;
+
         function validateRegForm() {
             const uname = document.getElementById('regUsername').value.trim();
             const cap = parseInt(document.getElementById('regCaptchaA').value);
-            const unameOk = /^[a-zA-Z0-9_]{3, 20}$/.test(uname);
+            const unameOk = /^[a-zA-Z0-9_]{3,20}$/.test(uname);
             const capOk = cap === _capAns;
 
             const unameEl = document.getElementById('regUsername');
             const capEl = document.getElementById('regCaptchaA');
+            const msgEl = document.getElementById('regMsg');
+
             unameEl.className = 'reg-input' + (uname.length > 0 ? (unameOk ? ' ok' : ' err') : '');
             capEl.className = 'reg-input' + (capEl.value.length > 0 ? (capOk ? ' ok' : ' err') : '');
 
-            document.getElementById('regSubmitBtn').disabled = !(unameOk && capOk);
+            document.getElementById('regSubmitBtn').disabled = !(unameOk && capOk && !_isUnameTaken);
+
+            // Hide the error message if the username is cleared or doesn't meet the format
+            if (!unameOk) {
+                _isUnameTaken = false;
+                if (msgEl.textContent.includes('terpakai')) {
+                    msgEl.textContent = '';
+                    msgEl.className = 'reg-msg';
+                }
+                return;
+            }
+
+            // Debounced DB check
+            if (_unameCheckTimeout) clearTimeout(_unameCheckTimeout);
+
+            _unameCheckTimeout = setTimeout(async () => {
+                try {
+                    // Check if another user has this name
+                    const { data, error } = await supabaseClient
+                        .from('profiles')
+                        .select('username')
+                        .ilike('username', uname)
+                        .limit(1);
+
+                    if (data && data.length > 0) {
+                        _isUnameTaken = true;
+                        unameEl.className = 'reg-input err';
+                        msgEl.textContent = '❌ Username sudah terpakai!';
+                        msgEl.className = 'reg-msg err';
+                        document.getElementById('regSubmitBtn').disabled = true;
+                    } else {
+                        _isUnameTaken = false;
+                        if (msgEl.textContent.includes('terpakai')) {
+                            msgEl.textContent = '';
+                            msgEl.className = 'reg-msg';
+                        }
+                        // Re-evaluate button state
+                        document.getElementById('regSubmitBtn').disabled = !capOk;
+                    }
+                } catch (e) {
+                    console.error('Username check error:', e);
+                }
+            }, 600); // 600ms delay after typing
         }
 
         // ── Submit registration ──
@@ -1771,59 +1872,31 @@
             msgEl.className = 'reg-msg';
 
             try {
-                // Generate a simple referral code for this user
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                let refCode = username.slice(0, 3).toUpperCase();
-                for (let i = refCode.length; i < 6; i++) {
-                    refCode += chars[Math.floor(Math.random() * chars.length)];
-                }
-
-                // Insert into Supabase
-                const { data, error } = await supabaseClient
-                    .from('profiles')
-                    .insert([
-                        {
-                            wallet: wallet.toLowerCase(),
-                            username: username,
-                            referral_code: refCode,
-                            referred_by: referral ? referral.toUpperCase() : null,
-                            points: referral ? 25 : 0 // give 25 bonus pts if they use a code
-                        }
-                    ])
-                    .select()
-                    .single();
-
-                if (error) {
-                    if (error.code === '23505') throw new Error('Username or wallet already registered');
-                    throw error;
-                }
-
-                if (referral) {
-                    // Find referrer by code
-                    const { data: referrerData } = await window.supabaseClient
-                        .from('profiles')
-                        .select('wallet, points, referral_count')
-                        .eq('referral_code', referral.toUpperCase())
-                        .single();
-
-                    if (referrerData) {
-                        // Reward referrer: +50 points, +1 referral count
-                        await window.supabaseClient
-                            .from('profiles')
-                            .update({
-                                points: (referrerData.points || 0) + 50,
-                                referral_count: (referrerData.referral_count || 0) + 1
-                            })
-                            .eq('wallet', referrerData.wallet);
+                // Use server-side Edge Function for registration (prevents referral manipulation)
+                const { data, error } = await window.supabaseClient.functions.invoke('register-player', {
+                    body: {
+                        wallet: wallet.toLowerCase(),
+                        username: username,
+                        referral_code_input: referral || null,
                     }
+                });
+
+                if (error) throw error;
+
+                if (!data || !data.success) {
+                    throw new Error(data?.error || 'Registration failed');
                 }
 
-                // Save player data
-                localStorage.setItem('dr_wallet', wallet.toLowerCase());
-                localStorage.setItem('dr_username', data.username);
-                localStorage.setItem('dr_referralCode', data.referral_code || '');
-                localStorage.setItem('dr_points', data.points || 0);
-                localStorage.setItem('dr_currentLevel', data.level || 1);
+                const profile = data.profile;
+
+                // Save player data locally
+                localStorage.setItem('dr_wallet', profile.wallet);
+                localStorage.setItem('dr_username', profile.username);
+                localStorage.setItem('dr_referralCode', profile.referral_code || '');
+                localStorage.setItem('dr_points', profile.points || 0);
+                const bestLevel = Math.max(profile.level || 1, 1);
+                localStorage.setItem('dr_currentLevel', bestLevel);
+                localStorage.setItem('dr_maxLevel', bestLevel);
 
                 msgEl.textContent = '✅ Account created! Redirecting to game...';
                 msgEl.className = 'reg-msg ok';
@@ -1843,18 +1916,6 @@
         // ── Mobile Debug Console ──
         function logDebug(msg) {
             console.log("[DEBUG]", msg);
-            const consoleEl = document.getElementById('debug-console');
-            if (consoleEl) {
-                const entry = document.createElement('div');
-                entry.style.borderBottom = '1px solid #333';
-                entry.style.padding = '4px 0';
-                entry.style.fontSize = '10px';
-                entry.textContent = `> ${new Date().toLocaleTimeString()}: ${msg}`;
-                consoleEl.prepend(entry);
-                while (consoleEl.children.length > 20) {
-                    consoleEl.removeChild(consoleEl.lastChild);
-                }
-            }
         }
 
         // Track which provider was used for connection
@@ -1889,8 +1950,8 @@
                         logDebug("Injected wallet connected: " + address);
                         _activeProvider = 'injected';
 
-                        // Request signature for verification
-                        await verifyWithProvider(window.ethereum, address);
+                        // Skip signature, trust the injected provider
+                        onWalletConnectUI(address);
                         return;
                     } else {
                         throw new Error("No accounts returned");
@@ -1932,39 +1993,38 @@
             }
 
             // Already connected via AppKit?
-            if (window.appKitModal.getIsConnected && window.appKitModal.getIsConnected()) {
-                const address = window.appKitModal.getAddress();
-                if (address) {
-                    _activeProvider = 'appkit';
-                    const provider = window.appKitModal.getWalletProvider ? window.appKitModal.getWalletProvider() : null;
-                    if (provider) {
-                        await verifyWithProvider(provider, address);
-                    } else {
-                        onWalletConnectUI(address);
-                    }
-                    return;
+            let isAppKitConnected = false;
+            let appKitAddress = null;
+
+            if (window.appKitModal.getAccount) {
+                const acc = window.appKitModal.getAccount();
+                if (acc && acc.isConnected) {
+                    isAppKitConnected = true;
+                    appKitAddress = acc.address;
                 }
+            } else if (window.appKitModal.getIsConnectedState) {
+                isAppKitConnected = window.appKitModal.getIsConnectedState();
+                appKitAddress = window.appKitModal.getAddress();
+            } else if (window.appKitModal.getIsConnected) {
+                isAppKitConnected = window.appKitModal.getIsConnected();
+                appKitAddress = window.appKitModal.getAddress();
+            }
+
+            if (isAppKitConnected && appKitAddress) {
+                logDebug("AppKit already connected!");
+                _activeProvider = 'appkit';
+                onWalletConnectUI(appKitAddress);
+                return;
             }
 
             try {
                 logDebug("Opening AppKit modal...");
 
                 // Set up callback for when AppKit connects
-                window._onAppKitConnect = async function(address) {
+                window._onAppKitConnect = async function (address) {
                     logDebug("AppKit connected: " + address);
                     _activeProvider = 'appkit';
-                    const provider = window.appKitModal.getWalletProvider ? window.appKitModal.getWalletProvider() : null;
-                    if (provider) {
-                        try {
-                            await verifyWithProvider(provider, address);
-                        } catch(e) {
-                            logDebug("AppKit verify failed: " + e.message);
-                            // Still proceed without signature
-                            onWalletConnectUI(address);
-                        }
-                    } else {
-                        onWalletConnectUI(address);
-                    }
+                    onWalletConnectUI(address);
                 };
 
                 await window.appKitModal.open();
@@ -1974,9 +2034,9 @@
                 let pollCount = 0;
                 const pollCheck = setInterval(() => {
                     pollCount++;
-                    const isConn = window.appKitModal.getIsConnectedState ? window.appKitModal.getIsConnectedState() : 
-                                  (window.appKitModal.getIsConnected ? window.appKitModal.getIsConnected() : false);
-                    
+                    const isConn = window.appKitModal.getIsConnectedState ? window.appKitModal.getIsConnectedState() :
+                        (window.appKitModal.getIsConnected ? window.appKitModal.getIsConnected() : false);
+
                     if (isConn) {
                         clearInterval(pollCheck);
                         const addr = window.appKitModal.getAddress ? window.appKitModal.getAddress() : null;
@@ -2002,42 +2062,7 @@
             }
         }
 
-        // ── Verify wallet via signature (works with any EIP-1193 provider) ──
-        async function verifyWithProvider(provider, address) {
-            logDebug("Verifying wallet: " + address);
-            const btnText = document.getElementById('connectBtnText');
-            const btn = document.getElementById('mainConnectBtn');
 
-            if (btnText) btnText.textContent = 'Verifying...';
-
-            try {
-                const message = `Zico Rush GameFi\nVerify: ${address}\nTime: ${Date.now()}`;
-                const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
-                    .map(b => b.toString(16).padStart(2, '0')).join('');
-
-                logDebug("Requesting signature...");
-                const signature = await provider.request({
-                    method: 'personal_sign',
-                    params: [hexMsg, address]
-                });
-
-                logDebug("Signature OK!");
-                onWalletConnectUI(address);
-            } catch (err) {
-                logDebug("Signature error: " + err.message);
-                if (err.code === 4001) {
-                    // User rejected signature – still mark as connected but warn
-                    logDebug("User rejected signature, proceeding without verify");
-                    onWalletConnectUI(address);
-                } else {
-                    // Other error – still connect but log
-                    logDebug("Signature failed but proceeding: " + err.message);
-                    onWalletConnectUI(address);
-                }
-            } finally {
-                if (btn) btn.disabled = false;
-            }
-        }
 
         // onWalletDisconnectUI helper
         window.onWalletDisconnectUI = function () {
@@ -2048,7 +2073,15 @@
             localStorage.removeItem('dr_points');
             localStorage.removeItem('dr_currentLevel');
             _activeProvider = null;
-            try { if (window.appKitModal && window.appKitModal.disconnect) window.appKitModal.disconnect(); } catch(e) {}
+            try { if (window.appKitModal && window.appKitModal.disconnect) window.appKitModal.disconnect(); } catch (e) { }
+
+            // Force clear wagmi/appkit cache so it doesn't auto-reconnect
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('@w3m') || key.toLowerCase().startsWith('wagmi') || key.startsWith('@appkit')) {
+                    localStorage.removeItem(key);
+                }
+            });
+
             location.reload();
         }
 
@@ -2074,7 +2107,12 @@
                     localStorage.setItem('dr_username', data.username);
                     localStorage.setItem('dr_referralCode', data.referral_code || '');
                     localStorage.setItem('dr_points', data.points || 0);
-                    localStorage.setItem('dr_currentLevel', data.level || 1);
+                    const dbLevel2 = data.level || 1;
+                    const localLevel2 = parseInt(localStorage.getItem('dr_currentLevel') || '1');
+                    const localMaxLevel2 = parseInt(localStorage.getItem('dr_maxLevel') || '1');
+                    const bestLevel2 = Math.max(dbLevel2, localLevel2, localMaxLevel2);
+                    localStorage.setItem('dr_currentLevel', bestLevel2);
+                    localStorage.setItem('dr_maxLevel', bestLevel2);
                     isReturning = true;
                 }
 
@@ -2110,7 +2148,7 @@
 
             // Listen for MetaMask account changes / disconnect
             if (window.ethereum) {
-                window.ethereum.on('accountsChanged', function(accounts) {
+                window.ethereum.on('accountsChanged', function (accounts) {
                     if (!accounts || accounts.length === 0) {
                         // Wallet disconnected
                         logDebug("Wallet disconnected (accountsChanged)");
@@ -2121,7 +2159,7 @@
                         onWalletDisconnectUI();
                     }
                 });
-                window.ethereum.on('disconnect', function() {
+                window.ethereum.on('disconnect', function () {
                     logDebug("Wallet disconnect event");
                     onWalletDisconnectUI();
                 });
@@ -2155,11 +2193,6 @@
             });
         }
     </script>
-    <!-- Debug Console for Mobile -->
-    <div id="debug-console"
-        style="position:fixed; bottom:0; left:0; width:100%; height:120px; background:rgba(0,0,0,0.85); color:#0f0; font-family:monospace; font-size:10px; overflow-y:auto; z-index:10000; padding:10px; border-top:1px solid #0f0; display:block; pointer-events:none;">
-        <div style="font-weight:bold; border-bottom:1px solid #0f0; margin-bottom:5px;">DEBUG CONSOLE (MMSDK)</div>
-    </div>
 </body>
 
 </html>
