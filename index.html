@@ -91,7 +91,7 @@
             inset: 0;
             z-index: 0;
             background-color: var(--bg-dark);
-            background-image: 
+            background-image:
                 radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
                 radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%),
                 radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.1), transparent 30%),
@@ -103,8 +103,15 @@
         }
 
         @keyframes bgBreathe {
-            0% { transform: scale(1); opacity: 0.8; }
-            100% { transform: scale(1.1); opacity: 1; }
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
         }
 
         /* ── Web3 Grid Overlay ── */
@@ -113,13 +120,13 @@
             inset: 0;
             z-index: 0;
             pointer-events: none;
-            background-image: 
+            background-image:
                 linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
             background-size: 40px 40px;
             background-position: center;
-            mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, transparent 80%);
-            -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, transparent 80%);
+            mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 30%, transparent 80%);
         }
 
         /* ── BRICK BORDERS (Left & Right) ── */
@@ -188,7 +195,8 @@
             justify-content: space-between;
             padding: 0 2rem;
             height: 60px;
-            background: rgba(10, 16, 29, 0.95);
+            background: url('assets/sprites/header.png') no-repeat center center;
+            background-size: cover;
             border-bottom: 2px solid #1e293b;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
             font-family: var(--font-modern);
@@ -1770,7 +1778,7 @@
             // Reset form
             document.getElementById('regUsername').value = '';
             document.getElementById('regUsername').className = 'reg-input';
-            
+
             // Auto-populate referral code if present in URL
             const urlParams = new URLSearchParams(window.location.search);
             const refCode = urlParams.get('ref');
@@ -1780,7 +1788,7 @@
             } else {
                 refInput.value = '';
             }
-            
+
             document.getElementById('regCaptchaA').value = '';
             document.getElementById('regCaptchaA').className = 'reg-input';
             document.getElementById('regSubmitBtn').disabled = true;
@@ -1879,7 +1887,7 @@
 
                 try {
                     btn.textContent = '✍️ Please Sign in Wallet...';
-                    
+
                     let eip1193Provider = null;
                     if (_activeProvider === 'injected' && window.ethereum) {
                         eip1193Provider = window.ethereum;
@@ -1894,7 +1902,7 @@
                     }
 
                     if (!eip1193Provider) {
-                         throw new Error("Could not find wallet provider for signing.");
+                        throw new Error("Could not find wallet provider for signing.");
                     }
 
                     const provider = new ethers.BrowserProvider(eip1193Provider);
