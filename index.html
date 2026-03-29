@@ -1868,16 +1868,54 @@
             const btn = document.getElementById('regSubmitBtn');
 
             btn.disabled = true;
-            btn.textContent = '⏳ Registering...';
+            btn.textContent = '⏳ Preparing...';
             msgEl.className = 'reg-msg';
 
             try {
-                // Use server-side Edge Function for registration (prevents referral manipulation)
+                // ── Get Anti-Bot Signature ──
+                const timestamp = Date.now().toString();
+                const messageToSign = `Register Zico Rush\nWallet: ${wallet.toLowerCase()}\nUsername: ${username}\nTimestamp: ${timestamp}`;
+                let signature;
+
+                try {
+                    btn.textContent = '✍️ Please Sign in Wallet...';
+                    
+                    let eip1193Provider = null;
+                    if (_activeProvider === 'injected' && window.ethereum) {
+                        eip1193Provider = window.ethereum;
+                    } else if (_activeProvider === 'appkit' && window.appKitModal) {
+                        if (typeof window.appKitModal.getWalletProvider === 'function') {
+                            eip1193Provider = window.appKitModal.getWalletProvider();
+                        } else if (window.ethereum) {
+                            eip1193Provider = window.ethereum;
+                        }
+                    } else if (window.ethereum) {
+                        eip1193Provider = window.ethereum;
+                    }
+
+                    if (!eip1193Provider) {
+                         throw new Error("Could not find wallet provider for signing.");
+                    }
+
+                    const provider = new ethers.BrowserProvider(eip1193Provider);
+                    const signer = await provider.getSigner();
+                    signature = await signer.signMessage(messageToSign);
+
+                } catch (signErr) {
+                    console.error("Signature error:", signErr);
+                    throw new Error("Registration cancelled: User denied signature or provider error.");
+                }
+
+                btn.textContent = '⏳ Creating Account...';
+
+                // Use server-side Edge Function for registration
                 const { data, error } = await window.supabaseClient.functions.invoke('register-player', {
                     body: {
                         wallet: wallet.toLowerCase(),
                         username: username,
                         referral_code_input: referral || null,
+                        signature: signature,
+                        timestamp: timestamp
                     }
                 });
 
