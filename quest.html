@@ -213,19 +213,6 @@
             justify-content: center;
             font-size: 2.8rem;
             box-shadow: 0 0 30px rgba(168, 85, 247, 0.2);
-            animation: avatarFloat 4s ease-in-out infinite;
-        }
-
-        @keyframes avatarFloat {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-6px);
-            }
         }
 
         .avatar-level-ring {
@@ -1024,11 +1011,85 @@
             }
         }
 
-        /* ───── Mobile nav toggle ───── */
-        .nav-mobile-links {
+        /* ── Character Selection Modal ── */
+        .char-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
             display: none;
+            align-items: center;
+            justify-content: center;
         }
-
+        .char-modal-card {
+            background: linear-gradient(160deg, #1e293b, #0f172a);
+            border: 2px solid #334155;
+            border-radius: 20px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            margin: 1rem;
+        }
+        .char-modal-title {
+            font-family: 'Space Grotesk', sans-serif;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.1em;
+        }
+        .char-modal-options {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .char-modal-opt {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .char-modal-opt img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            image-rendering: auto;
+        }
+        .char-modal-opt:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.15);
+        }
+        .char-modal-opt.active {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.25);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .char-modal-close {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .char-modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
         @media (max-width: 768px) {
             .nav-mobile-links {
                 display: flex;
@@ -1113,7 +1174,7 @@
                 <!-- Profile Header -->
                 <div class="profile-header-card">
                     <div class="profile-avatar-box">
-                        <div class="profile-avatar" id="profileAvatar">👤</div>
+                        <div class="profile-avatar" id="profileAvatar" onclick="openCharSelect()" style="cursor: pointer; position: relative; overflow: hidden;" title="Change Character">👤</div>
                         <div class="avatar-level-ring" id="avatarLevel">1</div>
                     </div>
                     <div class="profile-info">
@@ -1324,6 +1385,22 @@
         </div>
     </div>
 
+    <!-- ── Character Selection Modal ── -->
+    <div class="char-modal-overlay" id="charSelModal">
+        <div class="char-modal-card">
+            <div class="char-modal-title">CHOOSE CHARACTER</div>
+            <div class="char-modal-options">
+                <div class="char-modal-opt" id="opt-player1" onclick="saveCharProfile('player1')">
+                    <img src="assets/sprites/player1.png">
+                </div>
+                <div class="char-modal-opt" id="opt-player2" onclick="saveCharProfile('player2')">
+                    <img src="assets/sprites/player2.png">
+                </div>
+            </div>
+            <button class="char-modal-close" onclick="closeCharSelect()">Close</button>
+        </div>
+    </div>
+
     <script>
         const wallet = localStorage.getItem('dr_wallet') || '';
         const isDemo = localStorage.getItem('dr_demo') === '1';
@@ -1401,10 +1478,9 @@
                 document.getElementById('demoBadge').style.display = 'inline-flex';
             }
 
-            // Avatar emoji
-            const avatarEmojis = ['⚔️', '🛡️', '🗡️', '🏹', '🧙', '🦊', '🐉', '💎', '👑', '🔥', '⭐', '🚀'];
-            const idx = username.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % avatarEmojis.length;
-            document.getElementById('profileAvatar').textContent = avatarEmojis[idx];
+            // Avatar image (Character Selection)
+            const savedChar = localStorage.getItem('dr_character') || 'player1';
+            updateAvatarDisplay(savedChar);
 
             // Update achievements based on local data
             updateAchievements(level, points, 0, 0);
@@ -1419,6 +1495,34 @@
             // Check if returning from Twitter OAuth callback
             handleTwitterOAuthCallback();
         });
+
+        // ── Character Selection Logic ──
+        function updateAvatarDisplay(charName) {
+            const avatarEl = document.getElementById('profileAvatar');
+            // Using transform-origin: top center so the head stays in view while legs are cut off
+            avatarEl.innerHTML = `<img src="assets/sprites/${charName}.png" alt="Character" style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.6); transform-origin: top center; image-rendering: pixelated; margin-top: 5px;">`;
+        }
+
+        function openCharSelect() {
+            document.getElementById('charSelModal').style.display = 'flex';
+            const savedChar = localStorage.getItem('dr_character') || 'player1';
+            document.getElementById('opt-player1').className = 'char-modal-opt' + (savedChar === 'player1' ? ' active' : '');
+            document.getElementById('opt-player2').className = 'char-modal-opt' + (savedChar === 'player2' ? ' active' : '');
+        }
+
+        function closeCharSelect() {
+            document.getElementById('charSelModal').style.display = 'none';
+        }
+
+        function saveCharProfile(charName) {
+            localStorage.setItem('dr_character', charName);
+            // Optional: Support game.html's legacy char1/char2 format
+            if(charName === 'player1') localStorage.setItem('dr_character_legacy', 'char1');
+            if(charName === 'player2') localStorage.setItem('dr_character_legacy', 'char2');
+            
+            updateAvatarDisplay(charName);
+            closeCharSelect();
+        }
 
         // ── Player Data ──
         async function loadPlayerData() {
