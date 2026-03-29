@@ -15,6 +15,12 @@
     <meta name="description"
         content="View your Zico Rush GameFi player profile, stats, referral code, and game history." />
     <link rel="stylesheet" href="css/style.css" />
+    <!-- Pixel Font (VT323) and Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;700;900&family=VT323&display=swap"
+        rel="stylesheet">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>" />
     <!-- Phosphor Icons -->
@@ -28,6 +34,13 @@
     <!-- Ethers v6 for wallet support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
     <style>
+        :root {
+            --bg-dark: #0a101d;
+            --bg-mid: #132432;
+            --font-pixel: 'VT323', monospace;
+            --font-pixel-bold: 'Press Start 2P', cursive;
+            --font-modern: 'Space Grotesk', sans-serif;
+        }
         /* ───── NAVBAR ───── */
         .navbar {
             position: fixed;
@@ -38,12 +51,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 1.5rem;
+            padding: 0 2rem;
             height: 60px;
-            background: rgba(3, 7, 18, 0.88);
-            backdrop-filter: blur(16px) saturate(180%);
-            border-bottom: 1px solid rgba(168, 85, 247, 0.15);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+            background: rgba(10, 16, 29, 0.95);
+            border-bottom: 2px solid #1e293b;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            font-family: var(--font-modern);
         }
 
         .nav-brand {
@@ -54,54 +67,50 @@
         }
 
         .nav-brand .brand-icon {
-            font-size: 1.4rem;
-            filter: drop-shadow(0 0 8px #38bdf8);
+            font-size: 1.6rem;
+            filter: drop-shadow(0 0 10px #4fc3f7);
         }
 
         .nav-brand .brand-text {
-            font-family: 'Space Grotesk', monospace;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #a855f7, #06b6d4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: 0.08em;
+            font-size: 1rem;
+            font-weight: 900;
+            color: #e0e0e0;
+            letter-spacing: 0.05em;
         }
 
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 1rem;
         }
 
         .nav-link {
             display: flex;
             align-items: center;
             gap: 0.4rem;
-            padding: 0.5rem 0.9rem;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 0.6rem;
-            color: #64748b;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #94a3b8;
             text-decoration: none;
-            border-radius: 10px;
-            transition: all 0.25s;
-            letter-spacing: 0.04em;
+            border-radius: 8px;
+            transition: all 0.2s;
         }
 
         .nav-link:hover {
-            color: #e2e8f0;
-            background: rgba(168, 85, 247, 0.1);
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .nav-link.active {
-            color: #a855f7;
-            background: rgba(168, 85, 247, 0.12);
-            border: 1px solid rgba(168, 85, 247, 0.2);
+            color: #ffb300;
+            background: rgba(255, 179, 0, 0.1);
+            border: 1px solid rgba(255, 179, 0, 0.2);
         }
 
         .nav-link .nav-icon {
-            font-size: 0.85rem;
+            font-size: 1rem;
+            color: #ffb300;
         }
 
         .nav-wallet {
@@ -113,23 +122,49 @@
         .nav-wallet-badge {
             display: flex;
             align-items: center;
-            gap: 0.45rem;
-            padding: 0.4rem 0.85rem;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
             background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.25);
-            border-radius: 999px;
-            font-size: 0.58rem;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
             color: #22c55e;
-            font-family: monospace;
-            letter-spacing: 0.03em;
+            font-family: var(--font-pixel);
+            letter-spacing: 1px;
+            cursor: pointer;
         }
 
         .nav-wallet-badge .dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             background: #22c55e;
             border-radius: 50%;
-            animation: pulseGreen 2s ease-in-out infinite;
+            box-shadow: 0 0 8px #22c55e;
+        }
+
+        .nav-mobile-links {
+            display: none;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        @media(max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .nav-mobile-links {
+                display: flex;
+            }
+
+            .nav-brand .brand-text {
+                font-size: 0.8rem;
+            }
+
+            .navbar {
+                padding: 0 1rem;
+            }
         }
 
         @keyframes pulseGreen {
@@ -414,7 +449,7 @@
             text-transform: uppercase;
             letter-spacing: 0.12em;
             font-weight: 700;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
         }
 
         /* ───── TWO-COLUMN GRID ───── */
@@ -812,8 +847,15 @@
         }
 
         @keyframes claimPulse {
-            0%, 100% { box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
-            50% { box-shadow: 0 4px 25px rgba(245, 158, 11, 0.6); }
+
+            0%,
+            100% {
+                box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 4px 25px rgba(245, 158, 11, 0.6);
+            }
         }
 
         .btn-task.done {
@@ -869,13 +911,16 @@
                 gap: 0.6rem;
                 padding: 0.85rem 1rem;
             }
+
             .task-info {
                 flex: 1;
                 min-width: 120px;
             }
+
             .task-points {
                 order: 3;
             }
+
             .btn-task {
                 order: 4;
                 width: 100%;
@@ -1016,12 +1061,13 @@
             position: fixed;
             inset: 0;
             z-index: 200;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(8px);
             display: none;
             align-items: center;
             justify-content: center;
         }
+
         .char-modal-card {
             background: linear-gradient(160deg, #1e293b, #0f172a);
             border: 2px solid #334155;
@@ -1030,9 +1076,10 @@
             width: 100%;
             max-width: 320px;
             text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
             margin: 1rem;
         }
+
         .char-modal-title {
             font-family: 'Space Grotesk', sans-serif;
             color: #fff;
@@ -1041,12 +1088,14 @@
             margin-bottom: 1.5rem;
             letter-spacing: 0.1em;
         }
+
         .char-modal-options {
             display: flex;
             justify-content: center;
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
+
         .char-modal-opt {
             width: 80px;
             height: 80px;
@@ -1059,23 +1108,27 @@
             justify-content: center;
             transition: all 0.2s;
         }
+
         .char-modal-opt img {
             width: 50px;
             height: 50px;
             object-fit: contain;
             image-rendering: auto;
         }
+
         .char-modal-opt:hover {
             border-color: #a855f7;
             background: rgba(168, 85, 247, 0.15);
         }
+
         .char-modal-opt.active {
             border-color: #a855f7;
             background: rgba(168, 85, 247, 0.25);
             box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
         }
+
         .char-modal-close {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             border: none;
             color: #fff;
             padding: 0.6rem 1.5rem;
@@ -1086,28 +1139,222 @@
             cursor: pointer;
             transition: 0.2s;
         }
+
         .char-modal-close:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
-        
-        @media (max-width: 768px) {
-            .nav-mobile-links {
-                display: flex;
-                gap: 0.15rem;
-            }
 
-            .nav-mobile-link {
-                padding: 0.5rem 0.6rem;
-                font-size: 1rem;
-                text-decoration: none;
-                border-radius: 8px;
-                transition: background 0.2s;
-            }
+        /* ── PARCHMENT THEME OVERRIDES ── */
+        .parchment-theme .card-title {
+            color: #000000 !important;
+            text-shadow: none !important;
+            font-weight: 800;
+            font-size: 1.1rem !important;
+        }
 
-            .nav-mobile-link:hover,
-            .nav-mobile-link.active {
-                background: rgba(168, 85, 247, 0.12);
-            }
+        .parchment-theme .card-badge {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: #000000 !important;
+            color: #000000 !important;
+            text-shadow: none !important;
+            font-weight: 800 !important;
+            font-size: 0.75rem !important;
+            padding: 0.25rem 0.8rem !important;
+        }
+
+        .parchment-theme .referral-code-box {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: #000000 !important;
+        }
+
+        .parchment-theme .ref-code {
+            color: #000000 !important;
+            text-shadow: none !important;
+            font-size: 1.5rem !important;
+            font-weight: 900;
+        }
+
+        .parchment-theme .btn-copy {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: #000000 !important;
+            color: #000000 !important;
+            font-size: 0.75rem !important;
+            padding: 0.5rem 1rem !important;
+            font-weight: 800;
+            text-shadow: none !important;
+        }
+
+        .parchment-theme .btn-copy:hover {
+            background: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .parchment-theme .ref-link {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: #000000 !important;
+            color: #000000 !important;
+            text-shadow: none !important;
+            font-size: 0.8rem !important;
+            padding: 0.75rem 1rem !important;
+            font-weight: 600;
+        }
+
+        .parchment-theme .ref-info {
+            color: #000000 !important;
+            text-shadow: none !important;
+            font-size: 0.8rem !important;
+            line-height: 1.6 !important;
+            font-weight: 600;
+        }
+
+        .parchment-theme .ref-info strong {
+            color: #000000 !important;
+            text-shadow: none !important;
+            font-weight: 900;
+        }
+
+        .parchment-theme .ref-stat {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: #000000 !important;
+        }
+
+        .parchment-theme .rs-val {
+            color: #000000 !important;
+            text-shadow: none !important;
+            font-size: 1.1rem !important;
+            font-weight: 900;
+        }
+
+        .parchment-theme .rs-lbl {
+            color: #000000 !important;
+            text-shadow: none !important;
+            font-weight: 800 !important;
+            font-size: 0.7rem !important;
+        }
+
+        .parchment-theme .achievement.locked {
+            background: rgba(0, 0, 0, 0.03) !important;
+            border-color: #000000 !important;
+        }
+
+        .parchment-theme .achievement.unlocked {
+            background: rgba(0, 0, 0, 0.08) !important;
+            border-color: #000000 !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .parchment-theme .ach-name {
+            color: #000000 !important;
+            font-weight: 800;
+            text-shadow: none !important;
+            font-size: 0.75rem !important;
+        }
+
+        .parchment-theme .ach-icon img {
+            width: 50px !important;
+            height: 50px !important;
+        }
+
+        .parchment-theme .username {
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            background: none !important;
+            text-shadow: none !important;
+        }
+
+        .parchment-theme .wallet-addr {
+            color: #000000 !important;
+            font-weight: 800;
+        }
+
+        .parchment-theme .copy-icon {
+            color: #000000 !important;
+        }
+
+        .parchment-theme .p-badge {
+            color: #000000 !important;
+            border-color: #000000 !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            text-shadow: none !important;
+            font-weight: 800 !important;
+        }
+
+        .parchment-theme .btn-play-now {
+            color: #000000 !important;
+            border: 2px solid #000000 !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            box-shadow: none !important;
+        }
+
+        .profile-header-card.parchment-theme::before {
+            display: none !important;
+        }
+
+        .parchment-theme .task-name,
+        .parchment-theme .task-desc,
+        .parchment-theme .social-progress-text,
+        .parchment-theme .h-val,
+        .parchment-theme .h-lbl,
+        .parchment-theme .h-date {
+            color: #000000 !important;
+            text-shadow: none !important;
+        }
+
+        .parchment-theme .task-points {
+            color: #000000 !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: #000000 !important;
+        }
+
+        .parchment-theme .task-desc {
+            font-weight: 600 !important;
+        }
+
+        .parchment-theme .btn-task {
+            color: #000000 !important;
+            border: 2px solid #000000 !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+
+        .parchment-theme .btn-task.action {
+            background: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .parchment-theme .btn-task.done {
+            background: rgba(0, 0, 0, 0.1) !important;
+            border-style: dashed !important;
+        }
+
+        .parchment-theme .social-progress-bar {
+            background: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .parchment-theme .social-progress-fill {
+            background: #000000 !important;
+        }
+
+        .parchment-theme .task-icon {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid #000000 !important;
+            color: #000000 !important;
+        }
+
+        .parchment-theme .empty-state .es-icon,
+        .parchment-theme .empty-state .es-text {
+            color: #000000 !important;
+            text-shadow: none !important;
+            -webkit-text-fill-color: #000000 !important;
+        }
+
+        .parchment-theme .h-row {
+            background: rgba(0, 0, 0, 0.03) !important;
+            border-color: #000000 !important;
+        }
+
+        .parchment-theme .h-col {
+            color: #000000 !important;
+            text-shadow: none !important;
         }
     </style>
 </head>
@@ -1119,38 +1366,30 @@
     <!-- ═══════ NAVBAR ═══════ -->
     <nav class="navbar">
         <a href="index.html" class="nav-brand">
-            <span class="brand-icon">💎</span>
             <span class="brand-text">ZICO RUSH</span>
         </a>
 
         <div class="nav-links">
-            <a href="index.html" class="nav-link">
-                <span class="nav-icon">🏠</span> Home
-            </a>
-            <a href="game.html" class="nav-link">
-                <span class="nav-icon">🎮</span> Play
-            </a>
-            <a href="leaderboard.html" class="nav-link">
-                <span class="nav-icon">🏆</span> Leaderboard
-            </a>
-            <a href="quest.html" class="nav-link active">
-                <span class="nav-icon">👤</span> Quest
-            </a>
+            <a href="index.html" class="nav-link"><i class="ph-fill ph-house"></i> Home</a>
+            <a href="game.html" class="nav-link"><i class="ph-fill ph-game-controller"></i> Play</a>
+            <a href="leaderboard.html" class="nav-link"><i class="ph-fill ph-trophy"></i> Leaderboard</a>
+            <a href="quest.html" class="nav-link active"><i class="ph-fill ph-user"></i> Quest</a>
         </div>
 
-        <!-- Mobile nav icons -->
-        <div class="nav-mobile-links">
-            <a href="index.html" class="nav-mobile-link">🏠</a>
-            <a href="game.html" class="nav-mobile-link">🎮</a>
-            <a href="leaderboard.html" class="nav-mobile-link">🏆</a>
-            <a href="quest.html" class="nav-mobile-link active">👤</a>
+        <div class="nav-wallet-badge disconnected" id="navWalletBadge">
+            <div class="dot"></div>
+            <span id="navWalletAddr">Not Connected</span>
         </div>
 
-        <div class="nav-wallet">
-            <div class="nav-wallet-badge disconnected" id="navWalletBadge">
-                <span class="dot"></span>
-                <span id="navWalletAddr">Not Connected</span>
-            </div>
+        <div class="nav-mobile-links" style="border-bottom: none;">
+            <a href="index.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-house" style="color:#94a3b8;"></i></a>
+            <a href="game.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-game-controller" style="color:#94a3b8;"></i></a>
+            <a href="leaderboard.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-trophy" style="color:#94a3b8;"></i></a>
+            <a href="quest.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-user" style="color:#ffb300;"></i></a>
         </div>
     </nav>
 
@@ -1172,9 +1411,12 @@
             <div id="profileContent" style="display:none">
 
                 <!-- Profile Header -->
-                <div class="profile-header-card">
+                <div class="profile-header-card parchment-theme"
+                    style="background: url('assets/sprites/cards.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
                     <div class="profile-avatar-box">
-                        <div class="profile-avatar" id="profileAvatar" onclick="openCharSelect()" style="cursor: pointer; position: relative; overflow: hidden;" title="Change Character">👤</div>
+                        <div class="profile-avatar" id="profileAvatar" onclick="openCharSelect()"
+                            style="cursor: pointer; position: relative; overflow: hidden;" title="Change Character">👤
+                        </div>
                         <div class="avatar-level-ring" id="avatarLevel">1</div>
                     </div>
                     <div class="profile-info">
@@ -1186,7 +1428,9 @@
                         <div class="profile-badges">
                             <span class="p-badge level" id="levelBadge">⚡ LVL 1</span>
                             <span class="p-badge season">🚀 SEASON 1</span>
-                            <span class="p-badge" id="wlBadge" style="display:none; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(249, 115, 22, 0.15)); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b;">✨ WHITELIST</span>
+                            <span class="p-badge" id="wlBadge"
+                                style="display:none; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(249, 115, 22, 0.15)); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b;">✨
+                                WHITELIST</span>
                             <span class="p-badge demo" id="demoBadge" style="display:none">🔵 DEMO</span>
                         </div>
                     </div>
@@ -1196,49 +1440,66 @@
                 </div>
 
                 <!-- Mint Badge Section -->
-                <div class="glass-card" style="margin-bottom: 1.25rem; border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);">
-                    <div class="card-header" style="margin-bottom: 0.5rem;">
-                        <div class="card-title" style="color: #f59e0b; font-size: 0.8rem;"><i class="ph-fill ph-certificate"></i> Early Adopter NFT</div>
-                        <span class="card-badge" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.2); color: #fbbf24;" id="mintStatusBadge">Available</span>
+                <div class="glass-card parchment-theme"
+                    style="margin-bottom: 1.25rem; background: url('assets/sprites/cards.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
+                    <div class="card-header" style="margin-bottom: 0.5rem; position: relative; z-index: 2;">
+                        <div class="card-title" style="color: #000; text-shadow: none;"><i
+                                class="ph-fill ph-certificate" style="color: #000;"></i> Early Adopter NFT</div>
+                        <span class="card-badge" style="background: rgba(0,0,0,0.05); border-color: #000; color: #000;"
+                            id="mintStatusBadge">Available</span>
                     </div>
-                    <p style="font-size: 0.65rem; color: #cbd5e1; margin-bottom: 0.75rem; line-height: 1.5;">Mint your exclusive Early Adopter NFT to gain <strong>Whitelist Status</strong> and a massive <strong>+100,000 Points</strong> bonus. Only one mint per wallet!</p>
+                    <p class="ref-info"
+                        style="color: #000; text-shadow: none; margin-bottom: 0.75rem; position: relative; z-index: 2;">
+                        Mint your exclusive Early Adopter NFT to gain <strong style="color: #000;">Whitelist
+                            Status</strong> and a massive <strong style="color: #000;">+100,000 Points</strong> bonus.
+                        Only one mint per wallet!</p>
                     <!-- Network Info -->
                     <div style="display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                        <div style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.58rem; font-family: 'Space Grotesk', monospace; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.25); color: #06b6d4;">
+                        <div
+                            style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.8rem; font-family: 'Space Grotesk', monospace; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.25); color: #06b6d4; font-weight: 800; text-shadow: none;">
                             ⛓️ Base Network
                         </div>
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                        <button id="btnMintBadge" onclick="mintBadge()" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; padding: 0.8rem 1.5rem; border-radius: 12px; color: #000; font-family: 'Space Grotesk', monospace; font-size: 0.7rem; font-weight: 900; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
+                        <button id="btnMintBadge" onclick="mintBadge()"
+                            style="background: linear-gradient(135deg, #f59e0b, #d97706); border: 2px solid rgba(245, 158, 11, 0.3); padding: 0.8rem 1.5rem; border-radius: 12px; color: #ffffff; font-family: 'Space Grotesk', monospace; font-size: 0.9rem; font-weight: 900; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
                             💎 MINT BADGE NOW
                         </button>
-                        <span id="mintErrorText" style="color: #ef4444; font-size: 0.6rem; display: none;"></span>
+                        <span id="mintErrorText"
+                            style="color: #ef4444; font-size: 0.8rem; display: none; font-weight: bold;"></span>
                     </div>
                     <!-- Tx Hash Display (hidden until tx sent) -->
-                    <div id="mintTxInfo" style="display: none; margin-top: 0.75rem; padding: 0.6rem 0.85rem; background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.15); border-radius: 10px; font-size: 0.6rem; color: #94a3b8; font-family: monospace; word-break: break-all;">
-                        🔗 Tx: <a id="mintTxLink" href="#" target="_blank" style="color: #22c55e; text-decoration: underline;"></a>
+                    <div id="mintTxInfo"
+                        style="display: none; margin-top: 0.75rem; padding: 0.6rem 0.85rem; background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.15); border-radius: 10px; font-size: 0.6rem; color: #94a3b8; font-family: monospace; word-break: break-all;">
+                        🔗 Tx: <a id="mintTxLink" href="#" target="_blank"
+                            style="color: #22c55e; text-decoration: underline;"></a>
                     </div>
                 </div>
 
                 <!-- Stats Grid -->
                 <div class="stats-row">
-                    <div class="stat-card" style="background-image: url('assets/sprites/card/card1.png'); --stat-accent: #f8fafc">
+                    <div class="stat-card"
+                        style="background-image: url('assets/sprites/card/card1.png'); --stat-accent: #f8fafc">
                         <div class="s-icon"><i class="ph-fill ph-sparkle"></i></div>
                         <div class="s-value" id="statPoints">0</div>
                         <div class="s-label">Points</div>
                     </div>
-                    <div class="stat-card" style="background-image: url('assets/sprites/card/card2.png'); --stat-accent: #f8fafc">
+                    <div class="stat-card"
+                        style="background-image: url('assets/sprites/card/card2.png'); --stat-accent: #f8fafc">
                         <div class="s-icon"><i class="ph-fill ph-coin"></i></div>
                         <div class="s-value" id="statCoins">0</div>
                         <div class="s-label">Coins</div>
                     </div>
-                    <div class="stat-card" style="background-image: url('assets/sprites/card/card3.png'); --stat-accent: #f8fafc">
+                    <div class="stat-card"
+                        style="background-image: url('assets/sprites/card/card3.png'); --stat-accent: #f8fafc">
                         <div class="s-icon"><i class="ph-fill ph-trophy"></i></div>
                         <div class="s-value" id="statRank">—</div>
                         <div class="s-label">Rank</div>
                     </div>
-                    <div class="stat-card" style="background-image: url('assets/sprites/card/card2.png'); --stat-accent: #f8fafc">
-                        <div class="s-icon" style="color: #ffffff; text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);"><i class="ph-fill ph-game-controller"></i></div>
+                    <div class="stat-card"
+                        style="background-image: url('assets/sprites/card/card2.png'); --stat-accent: #f8fafc">
+                        <div class="s-icon" style="color: #ffffff; text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);"><i
+                                class="ph-fill ph-game-controller"></i></div>
                         <div class="s-value" id="statGames">0</div>
                         <div class="s-label">Games</div>
                     </div>
@@ -1248,8 +1509,9 @@
                 <div class="content-grid">
 
                     <!-- LEFT: Referral -->
-                    <div class="glass-card">
-                        <div class="card-header">
+                    <div class="glass-card parchment-theme"
+                        style="background: url('assets/sprites/cards2.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
+                        <div class="card-header" style="position: relative; z-index: 2;">
                             <div class="card-title">🎁 Referral</div>
                             <span class="card-badge" id="refCountBadge">0 Referred</span>
                         </div>
@@ -1259,7 +1521,8 @@
                         </div>
                         <div class="ref-link">
                             <span id="refLinkBox"></span>
-                            <button class="btn-copy" onclick="copyRefLink()" style="flex-shrink: 0; padding: 0.3rem 0.6rem; font-size: 0.55rem;">Copy Link</button>
+                            <button class="btn-copy" onclick="copyRefLink()"
+                                style="flex-shrink: 0; padding: 0.3rem 0.6rem; font-size: 0.55rem;">Copy Link</button>
                         </div>
                         <div class="ref-info">
                             Share your referral code with friends. You both earn <strong>+25 bonus
@@ -1278,29 +1541,50 @@
                     </div>
 
                     <!-- RIGHT: Achievements -->
-                    <div class="glass-card">
-                        <div class="card-header">
+                    <div class="glass-card parchment-theme"
+                        style="background: url('assets/sprites/cards2.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
+                        <div class="card-header" style="position: relative; z-index: 2;">
                             <div class="card-title">🏅 Achievements</div>
                         </div>
                         <div class="achievement-grid" id="achievementGrid">
                             <div class="achievement locked" id="ach1">
-                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge1.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge1.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
                                 <div class="ach-name">Mint NFT</div>
                             </div>
                             <div class="achievement locked" id="ach2">
-                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge2.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge2.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
                                 <div class="ach-name">100K Coins</div>
                             </div>
                             <div class="achievement locked" id="ach3">
-                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge3.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge3.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
                                 <div class="ach-name">Level 50</div>
                             </div>
                             <div class="achievement locked" id="ach4">
-                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge4.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge4.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
                                 <div class="ach-name">Level 25</div>
                             </div>
                             <div class="achievement locked" id="ach5">
-                                <div class="ach-icon" style="background: none; -webkit-text-fill-color: initial; filter: none;"><img src="assets/sprites/badge/badge5.png" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;"></div>
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge5.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
                                 <div class="ach-name">20 Referrals</div>
                             </div>
                         </div>
@@ -1308,7 +1592,8 @@
                 </div>
 
                 <!-- Social Tasks -->
-                <div class="glass-card social-tasks-section">
+                <div class="glass-card social-tasks-section parchment-theme"
+                    style="background: url('assets/sprites/cards2.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
                     <div class="card-header">
                         <div class="card-title">𝕏 Social Tasks</div>
                         <span class="card-badge" id="socialTasksBadge">0/4 Done</span>
@@ -1316,7 +1601,8 @@
                     <div class="task-list" id="socialTaskList">
                         <!-- Connect Twitter -->
                         <div class="task-item" id="task-twitter_connect" data-task="twitter_connect" data-points="1500">
-                            <div class="task-icon" style="--task-bg: rgba(255,255,255,0.08); --task-border: rgba(255,255,255,0.2)">𝕏</div>
+                            <div class="task-icon"
+                                style="--task-bg: rgba(255,255,255,0.08); --task-border: rgba(255,255,255,0.2)">𝕏</div>
                             <div class="task-info">
                                 <div class="task-name">Connect Twitter</div>
                                 <div class="task-desc">Follow us on Twitter to stay updated</div>
@@ -1326,7 +1612,8 @@
                         </div>
                         <!-- Follow -->
                         <div class="task-item" id="task-twitter_follow" data-task="twitter_follow" data-points="1000">
-                            <div class="task-icon" style="--task-bg: rgba(168,85,247,0.12); --task-border: rgba(168,85,247,0.25)">👥</div>
+                            <div class="task-icon"
+                                style="--task-bg: rgba(168,85,247,0.12); --task-border: rgba(168,85,247,0.25)">👥</div>
                             <div class="task-info">
                                 <div class="task-name">Follow @zicorush_</div>
                                 <div class="task-desc">Follow our official Twitter account</div>
@@ -1336,7 +1623,8 @@
                         </div>
                         <!-- Retweet -->
                         <div class="task-item" id="task-twitter_retweet" data-task="twitter_retweet" data-points="800">
-                            <div class="task-icon" style="--task-bg: rgba(34,197,94,0.12); --task-border: rgba(34,197,94,0.25)">🔁</div>
+                            <div class="task-icon"
+                                style="--task-bg: rgba(34,197,94,0.12); --task-border: rgba(34,197,94,0.25)">🔁</div>
                             <div class="task-info">
                                 <div class="task-name">Retweet Pinned Tweet</div>
                                 <div class="task-desc">Retweet our pinned announcement</div>
@@ -1346,7 +1634,8 @@
                         </div>
                         <!-- Like -->
                         <div class="task-item" id="task-twitter_like" data-task="twitter_like" data-points="800">
-                            <div class="task-icon" style="--task-bg: rgba(239,68,68,0.12); --task-border: rgba(239,68,68,0.25)">❤️</div>
+                            <div class="task-icon"
+                                style="--task-bg: rgba(239,68,68,0.12); --task-border: rgba(239,68,68,0.25)">❤️</div>
                             <div class="task-info">
                                 <div class="task-name">Like Tweet</div>
                                 <div class="task-desc">Like our pinned tweet</div>
@@ -1363,19 +1652,7 @@
                     </div>
                 </div>
 
-                <!-- Game History -->
-                <div class="glass-card">
-                    <div class="card-header">
-                        <div class="card-title">📋 Game History</div>
-                        <span class="card-badge" id="historyCountBadge">Recent 20</span>
-                    </div>
-                    <div id="historyContent">
-                        <div class="empty-state">
-                            <div class="es-icon">⟳</div>
-                            <div class="es-text">Loading history...</div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- Disconnect -->
                 <div class="disconnect-row">
@@ -1517,9 +1794,9 @@
         function saveCharProfile(charName) {
             localStorage.setItem('dr_character', charName);
             // Optional: Support game.html's legacy char1/char2 format
-            if(charName === 'player1') localStorage.setItem('dr_character_legacy', 'char1');
-            if(charName === 'player2') localStorage.setItem('dr_character_legacy', 'char2');
-            
+            if (charName === 'player1') localStorage.setItem('dr_character_legacy', 'char1');
+            if (charName === 'player2') localStorage.setItem('dr_character_legacy', 'char2');
+
             updateAvatarDisplay(charName);
             closeCharSelect();
         }
@@ -1583,12 +1860,12 @@
                     .order('points', { ascending: false });
 
                 if (error) throw error;
-                
+
                 const players = data || [];
                 const meIndex = players.findIndex(p =>
                     p.wallet && wallet && p.wallet.toLowerCase() === wallet.toLowerCase()
                 );
-                
+
                 if (meIndex !== -1) {
                     document.getElementById('statRank').textContent = `#${meIndex + 1}`;
                 } else {
@@ -1617,7 +1894,7 @@
         // ── Achievements ──
         function updateAchievements(level, points, diamonds, refs) {
             // ach1 is "Mint NFT Badge" — toggled dynamically via markMintedUI()
-            
+
             // 100,000 Points
             toggle('ach2', points >= 100000);
             // Level 50
@@ -2291,14 +2568,14 @@
         // ── Disconnect ──
         function disconnectWallet() {
             if (confirm('Are you sure you want to disconnect your wallet?')) {
-                try { if (window.appKitModal && window.appKitModal.disconnect) window.appKitModal.disconnect(); } catch(e) {}
+                try { if (window.appKitModal && window.appKitModal.disconnect) window.appKitModal.disconnect(); } catch (e) { }
                 localStorage.removeItem('dr_wallet');
                 localStorage.removeItem('dr_demo');
                 localStorage.removeItem('dr_username');
                 localStorage.removeItem('dr_referralCode');
                 localStorage.removeItem('dr_points');
                 localStorage.removeItem('dr_currentLevel');
-                
+
                 // Force clear wagmi/appkit cache so it doesn't auto-reconnect
                 Object.keys(localStorage).forEach(key => {
                     if (key.startsWith('@w3m') || key.toLowerCase().startsWith('wagmi') || key.startsWith('@appkit')) {
