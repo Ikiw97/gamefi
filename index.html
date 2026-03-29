@@ -280,6 +280,21 @@
             box-shadow: 0 0 8px #22c55e;
         }
 
+        .nav-wallet-badge .disconnect-icon {
+            margin-left: 0.5rem;
+            padding: 2px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            color: #ff4b91;
+            display: none;
+            font-size: 1rem;
+        }
+
+        .nav-wallet-badge .disconnect-icon:hover {
+            background: rgba(239, 68, 68, 0.15);
+            transform: scale(1.1);
+        }
+
         .nav-mobile-links {
             display: none;
             /* Hide on desktop */
@@ -1455,6 +1470,7 @@
         <div class="nav-wallet-badge" id="navWalletBtn" onclick="connectWallet()">
             <div class="dot"></div>
             <span id="navWalletText">Connect</span>
+            <i class="ph-bold ph-sign-out disconnect-icon" id="navDisconnectIcon" onclick="event.stopPropagation(); window.onWalletDisconnectUI();" title="Disconnect"></i>
         </div>
 
         <div class="nav-mobile-links" style="border-bottom: none;">
@@ -1643,6 +1659,8 @@
                 const dot = navBtn.querySelector('.dot');
                 if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 8px #22c55e'; }
                 if (navText) navText.textContent = wallet.slice(0, 6) + '...' + wallet.slice(-4);
+                const disconnectIcon = document.getElementById('navDisconnectIcon');
+                if (disconnectIcon) disconnectIcon.style.display = 'inline-block';
             } else {
                 navBtn.style.background = 'rgba(239,68,68,0.1)';
                 navBtn.style.borderColor = 'rgba(239,68,68,0.4)';
@@ -1650,6 +1668,8 @@
                 const dot = navBtn.querySelector('.dot');
                 if (dot) { dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 8px #ef4444'; }
                 if (navText) navText.textContent = 'Connect';
+                const disconnectIcon = document.getElementById('navDisconnectIcon');
+                if (disconnectIcon) disconnectIcon.style.display = 'none';
             }
         }
 
