@@ -515,6 +515,10 @@
         }
 
         .ref-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 10px;
@@ -1192,7 +1196,10 @@
                             <span class="ref-code" id="refCode">—</span>
                             <button class="btn-copy" onclick="copyRefCode()">Copy</button>
                         </div>
-                        <div class="ref-link" id="refLinkBox"></div>
+                        <div class="ref-link">
+                            <span id="refLinkBox"></span>
+                            <button class="btn-copy" onclick="copyRefLink()" style="flex-shrink: 0; padding: 0.3rem 0.6rem; font-size: 0.55rem;">Copy Link</button>
+                        </div>
                         <div class="ref-info">
                             Share your referral code with friends. You both earn <strong>+25 bonus
                                 points</strong> when they join!
@@ -1247,43 +1254,43 @@
                     </div>
                     <div class="task-list" id="socialTaskList">
                         <!-- Connect Twitter -->
-                        <div class="task-item" id="task-twitter_connect" data-task="twitter_connect" data-points="50">
+                        <div class="task-item" id="task-twitter_connect" data-task="twitter_connect" data-points="1500">
                             <div class="task-icon" style="--task-bg: rgba(255,255,255,0.08); --task-border: rgba(255,255,255,0.2)">𝕏</div>
                             <div class="task-info">
                                 <div class="task-name">Connect Twitter</div>
                                 <div class="task-desc">Follow us on Twitter to stay updated</div>
                             </div>
-                            <div class="task-points">+50 PTS</div>
+                            <div class="task-points">+1500 PTS</div>
                             <button class="btn-task action" onclick="doSocialTask('twitter_connect')">Connect</button>
                         </div>
                         <!-- Follow -->
-                        <div class="task-item" id="task-twitter_follow" data-task="twitter_follow" data-points="30">
+                        <div class="task-item" id="task-twitter_follow" data-task="twitter_follow" data-points="1000">
                             <div class="task-icon" style="--task-bg: rgba(168,85,247,0.12); --task-border: rgba(168,85,247,0.25)">👥</div>
                             <div class="task-info">
                                 <div class="task-name">Follow @zicorush_</div>
                                 <div class="task-desc">Follow our official Twitter account</div>
                             </div>
-                            <div class="task-points">+30 PTS</div>
+                            <div class="task-points">+1000 PTS</div>
                             <button class="btn-task action" onclick="doSocialTask('twitter_follow')">Follow</button>
                         </div>
                         <!-- Retweet -->
-                        <div class="task-item" id="task-twitter_retweet" data-task="twitter_retweet" data-points="20">
+                        <div class="task-item" id="task-twitter_retweet" data-task="twitter_retweet" data-points="800">
                             <div class="task-icon" style="--task-bg: rgba(34,197,94,0.12); --task-border: rgba(34,197,94,0.25)">🔁</div>
                             <div class="task-info">
                                 <div class="task-name">Retweet Pinned Tweet</div>
                                 <div class="task-desc">Retweet our pinned announcement</div>
                             </div>
-                            <div class="task-points">+20 PTS</div>
+                            <div class="task-points">+800 PTS</div>
                             <button class="btn-task action" onclick="doSocialTask('twitter_retweet')">Retweet</button>
                         </div>
                         <!-- Like -->
-                        <div class="task-item" id="task-twitter_like" data-task="twitter_like" data-points="20">
+                        <div class="task-item" id="task-twitter_like" data-task="twitter_like" data-points="800">
                             <div class="task-icon" style="--task-bg: rgba(239,68,68,0.12); --task-border: rgba(239,68,68,0.25)">❤️</div>
                             <div class="task-info">
                                 <div class="task-name">Like Tweet</div>
                                 <div class="task-desc">Like our pinned tweet</div>
                             </div>
-                            <div class="task-points">+20 PTS</div>
+                            <div class="task-points">+800 PTS</div>
                             <button class="btn-task action" onclick="doSocialTask('twitter_like')">Like</button>
                         </div>
                     </div>
@@ -1528,19 +1535,19 @@
         const SOCIAL_TASK_CONFIG = {
             twitter_connect: {
                 url: 'https://twitter.com/zicorush_',
-                points: 50
+                points: 1500
             },
             twitter_follow: {
                 url: 'https://twitter.com/intent/follow?screen_name=zicorush_',
-                points: 30
+                points: 1000
             },
             twitter_retweet: {
                 url: 'https://twitter.com/intent/retweet?tweet_id=TWEET_ID_HERE',
-                points: 20
+                points: 800
             },
             twitter_like: {
                 url: 'https://twitter.com/intent/like?tweet_id=TWEET_ID_HERE',
-                points: 20
+                points: 800
             }
         };
 
@@ -2152,9 +2159,19 @@
             const code = document.getElementById('refCode').textContent;
             if (!code || code === '—') return;
             navigator.clipboard.writeText(code).then(() => {
-                const btn = document.querySelector('.btn-copy');
+                const btn = document.querySelector('.referral-code-box .btn-copy');
                 btn.textContent = 'Copied!';
                 setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+            });
+        }
+
+        function copyRefLink() {
+            const link = document.getElementById('refLinkBox').textContent;
+            if (!link || link === '') return;
+            navigator.clipboard.writeText(link).then(() => {
+                const btn = document.querySelector('.ref-link .btn-copy');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000);
             });
         }
 
