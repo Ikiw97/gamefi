@@ -1612,10 +1612,7 @@
 
             <!-- Captcha -->
             <div class="reg-field">
-                <label class="reg-label" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
-                    <span>🤖 Security Check <span style="color:#ef4444">*</span></span>
-                    <span id="turnstileStatus" style="font-size:0.65rem; color:#334155; font-weight:800;">(Pending)</span>
-                </label>
+                <span id="turnstileStatus" style="display:none;"></span>
                 <div class="cf-turnstile" data-sitekey="0x4AAAAAACxz4waG96exCOCx" data-callback="onTurnstileSuccess" data-error-callback="onTurnstileError" data-expired-callback="onTurnstileExpired" data-theme="dark"></div>
             </div>
 
