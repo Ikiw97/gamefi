@@ -41,6 +41,7 @@
 
     <!-- Reown AppKit for Multi-Wallet Support (MetaMask, OKX, Bitget, etc.) -->
     <script type="module" src="js/appkit-init.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <!-- Pixel Font (VT323) and Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1610,11 +1611,11 @@
 
             <!-- Captcha -->
             <div class="reg-field">
-                <label class="reg-label">🤖 Verify you are human</label>
-                <div class="reg-captcha-row">
-                    <div class="reg-captcha-q" id="regCaptchaQ">? + ? = ?</div>
-                    <input class="reg-input" id="regCaptchaA" type="number" placeholder="Answer" style="flex:1;">
-                </div>
+                <label class="reg-label" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                    <span>🤖 Security Check <span style="color:#ef4444">*</span></span>
+                    <span id="turnstileStatus" style="font-size:0.65rem; color:#64748b; font-weight:700;">(Pending)</span>
+                </label>
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAACxz4waG96exCOCx" data-callback="onTurnstileSuccess" data-error-callback="onTurnstileError" data-expired-callback="onTurnstileExpired" data-theme="dark"></div>
             </div>
 
             <div class="reg-msg" id="regMsg"></div>
@@ -1637,13 +1638,27 @@
         const playerState = window.walletState; // For backward compatibility in this file
 
         // ── Captcha state ──
-        let _capA, _capB, _capAns;
+        let _isCaptchaValid = false;
 
-        function initCaptcha() {
-            _capA = Math.floor(Math.random() * 14) + 1;
-            _capB = Math.floor(Math.random() * 14) + 1;
-            _capAns = _capA + _capB;
-            document.getElementById('regCaptchaQ').textContent = `${_capA} + ${_capB} = ?`;
+        function onTurnstileSuccess(token) {
+            _isCaptchaValid = true;
+            document.getElementById('turnstileStatus').textContent = '(Verified)';
+            document.getElementById('turnstileStatus').style.color = '#22c55e';
+            validateRegForm();
+        }
+
+        function onTurnstileError() {
+            _isCaptchaValid = false;
+            document.getElementById('turnstileStatus').textContent = '(Error)';
+            document.getElementById('turnstileStatus').style.color = '#ef4444';
+            validateRegForm();
+        }
+
+        function onTurnstileExpired() {
+            _isCaptchaValid = false;
+            document.getElementById('turnstileStatus').textContent = '(Expired)';
+            document.getElementById('turnstileStatus').style.color = '#f59e0b';
+            validateRegForm();
         }
 
         // ── Update nav wallet badge ──
@@ -1789,11 +1804,19 @@
             }
         }
 
-        // ── Open registration modal ──
         function openRegModal(wallet) {
             document.getElementById('regWalletSub').textContent =
                 wallet.slice(0, 6) + '...' + wallet.slice(-4) + ' – Fill in details to create your account.';
-            initCaptcha();
+            
+            if (window.turnstile) {
+                turnstile.reset();
+            }
+            _isCaptchaValid = false;
+            if (document.getElementById('turnstileStatus')) {
+                document.getElementById('turnstileStatus').textContent = '(Pending)';
+                document.getElementById('turnstileStatus').style.color = '#64748b';
+            }
+
             // Reset form
             document.getElementById('regUsername').value = '';
             document.getElementById('regUsername').className = 'reg-input';
@@ -1808,8 +1831,6 @@
                 refInput.value = '';
             }
 
-            document.getElementById('regCaptchaA').value = '';
-            document.getElementById('regCaptchaA').className = 'reg-input';
             document.getElementById('regSubmitBtn').disabled = true;
             document.getElementById('regMsg').className = 'reg-msg';
             document.getElementById('regMsg').textContent = '';
@@ -1819,7 +1840,6 @@
 
             // Wire live validation
             document.getElementById('regUsername').oninput = validateRegForm;
-            document.getElementById('regCaptchaA').oninput = validateRegForm;
             document.getElementById('regReferral').oninput = function () {
                 this.value = this.value.toUpperCase();
             };
@@ -1830,16 +1850,13 @@
 
         function validateRegForm() {
             const uname = document.getElementById('regUsername').value.trim();
-            const cap = parseInt(document.getElementById('regCaptchaA').value);
             const unameOk = /^[a-zA-Z0-9_]{3,20}$/.test(uname);
-            const capOk = cap === _capAns;
+            const capOk = _isCaptchaValid;
 
             const unameEl = document.getElementById('regUsername');
-            const capEl = document.getElementById('regCaptchaA');
             const msgEl = document.getElementById('regMsg');
 
             unameEl.className = 'reg-input' + (uname.length > 0 ? (unameOk ? ' ok' : ' err') : '');
-            capEl.className = 'reg-input' + (capEl.value.length > 0 ? (capOk ? ' ok' : ' err') : '');
 
             document.getElementById('regSubmitBtn').disabled = !(unameOk && capOk && !_isUnameTaken);
 
