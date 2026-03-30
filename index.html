@@ -860,9 +860,10 @@
         .reg-sub {
             font-family: var(--font-modern);
             font-size: 0.72rem;
-            color: #64748b;
+            color: #334155;
             text-align: center;
             margin-bottom: 1.5rem;
+            font-weight: 600;
         }
 
         .reg-field {
@@ -873,8 +874,8 @@
             display: block;
             font-family: var(--font-modern);
             font-size: 0.7rem;
-            font-weight: 700;
-            color: #94a3b8;
+            font-weight: 800;
+            color: #1e293b;
             text-transform: uppercase;
             letter-spacing: 0.06em;
             margin-bottom: 0.4rem;
@@ -882,16 +883,21 @@
 
         .reg-input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.04);
-            border: 2px solid #334155;
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px solid #475569;
             border-radius: 10px;
             padding: 0.8rem 1rem;
-            color: #f1f5f9;
+            color: #0f172a;
             font-family: var(--font-modern);
             font-size: 0.95rem;
-            font-weight: 600;
+            font-weight: 700;
             outline: none;
             transition: border-color 0.2s;
+        }
+
+        .reg-input::placeholder {
+            color: #64748b;
+            font-weight: 600;
         }
 
         .reg-input:focus {
@@ -1608,7 +1614,7 @@
             <div class="reg-field">
                 <label class="reg-label" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
                     <span>🤖 Security Check <span style="color:#ef4444">*</span></span>
-                    <span id="turnstileStatus" style="font-size:0.65rem; color:#64748b; font-weight:700;">(Pending)</span>
+                    <span id="turnstileStatus" style="font-size:0.65rem; color:#334155; font-weight:800;">(Pending)</span>
                 </label>
                 <div class="cf-turnstile" data-sitekey="0x4AAAAAACxz4waG96exCOCx" data-callback="onTurnstileSuccess" data-error-callback="onTurnstileError" data-expired-callback="onTurnstileExpired" data-theme="dark"></div>
             </div>
@@ -1812,7 +1818,7 @@
             _turnstileToken = "";
             if (document.getElementById('turnstileStatus')) {
                 document.getElementById('turnstileStatus').textContent = '(Pending)';
-                document.getElementById('turnstileStatus').style.color = '#64748b';
+                document.getElementById('turnstileStatus').style.color = '#334155';
             }
 
             // Reset form
