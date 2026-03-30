@@ -832,26 +832,20 @@
         }
 
         .reg-card {
-            background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
-            border: 2px solid #334155;
-            border-radius: 20px;
-            padding: 2rem 2rem 1.75rem;
+            background: url('assets/sprites/cards2.png') no-repeat center center;
+            background-size: 100% 100%;
+            border: none;
+            border-radius: 0;
+            padding: 3rem 2rem 2.5rem;
             width: 100%;
             max-width: 420px;
             margin: 1rem;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(139, 92, 246, 0.1);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
             position: relative;
-            overflow: hidden;
         }
 
         .reg-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 10%;
-            right: 10%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #ffb300, #f59e0b, transparent);
+            display: none;
         }
 
         .reg-title {
@@ -1159,8 +1153,8 @@
             /* Registration modal mobile */
             .reg-card {
                 margin: 0.5rem;
-                padding: 1.5rem 1.25rem 1.25rem;
-                border-radius: 16px;
+                padding: 2.5rem 1.5rem 2rem;
+                border-radius: 0;
             }
 
             .reg-title {
@@ -1344,7 +1338,8 @@
             /* Registration modal very small */
             .reg-card {
                 margin: 0.25rem;
-                padding: 1.25rem 1rem 1rem;
+                padding: 2.25rem 1.25rem 1.75rem;
+                border-radius: 0;
             }
 
             .reg-title {
