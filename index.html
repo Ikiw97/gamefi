@@ -1639,9 +1639,11 @@
 
         // ── Captcha state ──
         let _isCaptchaValid = false;
+        let _turnstileToken = "";
 
         function onTurnstileSuccess(token) {
             _isCaptchaValid = true;
+            _turnstileToken = token;
             document.getElementById('turnstileStatus').textContent = '(Verified)';
             document.getElementById('turnstileStatus').style.color = '#22c55e';
             validateRegForm();
@@ -1812,6 +1814,7 @@
                 turnstile.reset();
             }
             _isCaptchaValid = false;
+            _turnstileToken = "";
             if (document.getElementById('turnstileStatus')) {
                 document.getElementById('turnstileStatus').textContent = '(Pending)';
                 document.getElementById('turnstileStatus').style.color = '#64748b';
@@ -1959,7 +1962,8 @@
                         username: username,
                         referral_code_input: referral || null,
                         signature: signature,
-                        timestamp: timestamp
+                        timestamp: timestamp,
+                        cf_turnstile_response: _turnstileToken
                     }
                 });
 
