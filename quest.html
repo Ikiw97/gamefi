@@ -1786,7 +1786,11 @@
             loadPlayerRank();
             loadGameHistory();
             loadSocialTasks();
-            checkMintBadgeStatus();
+            
+            // Give system 1.5s to settle (Supabase/Ethers) then check/sync mint status
+            setTimeout(() => {
+                checkMintBadgeStatus();
+            }, 1500);
 
             // Check if returning from Twitter OAuth callback
             handleTwitterOAuthCallback();
