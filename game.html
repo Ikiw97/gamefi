@@ -936,10 +936,10 @@
             const username = localStorage.getItem('dr_username') || 'Player';
             const wallet = localStorage.getItem('dr_wallet') || '';
             const points = parseInt(localStorage.getItem('dr_points') || '0');
-            const level = Math.max(
+            const level = Math.min(80, Math.max(
                 parseInt(localStorage.getItem('dr_currentLevel') || '1'),
                 parseInt(localStorage.getItem('dr_maxLevel') || '1')
-            );
+            ));
             const lives = window.gameState ? window.gameState.lives : 3;
 
             document.getElementById('menuUsername').textContent = username;
@@ -987,6 +987,9 @@
             }
 
             const gs = window.gameState;
+            // Reset lives with bonus at higher levels for fairness
+            const bonusLives = Math.floor((gs.currentLevel || 1) / 15);
+            gs.lives = 3 + bonusLives;
             if (window.game) {
                 // If Phaser already initialized, just start a new game scene
                 const activeScene = window.game.scene.getScenes(true)[0];
