@@ -154,9 +154,15 @@ class GameScene extends Phaser.Scene {
             if (level >= 30) totalGoblins += Math.floor((level - 30) / 4);
             if (level >= 50) totalGoblins += Math.floor((level - 50) / 3);
             if (level >= 70) totalGoblins += Math.floor((level - 70) / 2);
+
+            // Level 50+: enforce minimum 4, maximum 8 goblins
+            if (level >= 50) {
+                totalGoblins = Math.max(4, Math.min(8, totalGoblins));
+            }
             
             // Filter empty floors to keep goblins away from the START position
-            // AND ensure the goblin has at least 2 adjacent open floor tiles so the player can dodge
+            // AND ensure the goblin has enough adjacent open floor tiles so the player can dodge
+            const minAdjacentFloors = level >= 50 ? 3 : 2; // More open space needed at high levels
             const safeGoblinFloors = emptyFloors.filter(pos => {
                 const distToStart = Math.abs(pos.c - startCol) + Math.abs(pos.r - startRow);
                 if (distToStart <= 4) return false; // Keep at least 4 tiles away from start
@@ -167,7 +173,7 @@ class GameScene extends Phaser.Scene {
                 if (pos.r < rows - 1 && grid[pos.r + 1][pos.c] === 0) adjacentFloors++;
                 if (pos.c > 0 && grid[pos.r][pos.c - 1] === 0) adjacentFloors++;
                 if (pos.c < cols - 1 && grid[pos.r][pos.c + 1] === 0) adjacentFloors++;
-                return adjacentFloors >= 2; // Must have at least 2 open neighbors for dodging
+                return adjacentFloors >= minAdjacentFloors;
             });
 
             // Scale goblin density cap with level (still keep it possible to dodge)
