@@ -2250,9 +2250,27 @@
                 btn.textContent = '🔍 CHECKING...';
                 const alreadyMinted = await nftContract.hasMinted(signerAddress);
                 if (alreadyMinted) {
+                    btn.textContent = '🎯 SYNCING DATA...';
+                    try {
+                        const response = await fetch('https://xtiryhqorgvqksqnggnj.supabase.co/functions/v1/mint-badge', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ wallet: signerAddress.toLowerCase() })
+                        });
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error || 'Failed to sync with database');
+                        if (data.points_awarded) {
+                            let currentPoints = parseInt(localStorage.getItem('dr_points') || '0');
+                            currentPoints += data.points_awarded;
+                            document.getElementById('statPoints').textContent = fmtNum(currentPoints);
+                            localStorage.setItem('dr_points', currentPoints.toString());
+                        }
+                    } catch (syncErr) {
+                        console.warn('Sync failed:', syncErr);
+                    }
                     markMintedUI();
                     btn.textContent = '✅ ALREADY MINTED';
-                    showTaskToast('Badge already minted on-chain!', false);
+                    showTaskToast('Badge synced from blockchain!', false);
                     return;
                 }
 
@@ -2279,24 +2297,25 @@
 
                 // 9. Call Supabase edge function to record mint & award points
                 btn.textContent = '🎯 AWARDING POINTS...';
-                try {
-                    const response = await fetch('https://xtiryhqorgvqksqnggnj.supabase.co/functions/v1/mint-badge', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            wallet: walletState.wallet.toLowerCase(),
-                            txHash: tx.hash
-                        })
-                    });
-                    const data = await response.json();
-                    if (data.points_awarded) {
-                        let currentPoints = parseInt(localStorage.getItem('dr_points') || '0');
-                        currentPoints += data.points_awarded;
-                        document.getElementById('statPoints').textContent = fmtNum(currentPoints);
-                        localStorage.setItem('dr_points', currentPoints.toString());
-                    }
-                } catch (edgeErr) {
-                    console.warn('Edge function call failed (mint still succeeded on-chain):', edgeErr);
+                const response = await fetch('https://xtiryhqorgvqksqnggnj.supabase.co/functions/v1/mint-badge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        wallet: signerAddress.toLowerCase(),
+                        txHash: tx.hash
+                    })
+                });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error("Database failed: " + (data.error || 'Unknown error') + ". Please refresh and click Mint again to sync.");
+                }
+                
+                if (data.points_awarded) {
+                    let currentPoints = parseInt(localStorage.getItem('dr_points') || '0');
+                    currentPoints += data.points_awarded;
+                    document.getElementById('statPoints').textContent = fmtNum(currentPoints);
+                    localStorage.setItem('dr_points', currentPoints.toString());
                 }
 
                 // 10. Success UI
