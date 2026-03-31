@@ -12,10 +12,10 @@ const playerSession = {
 
 // Global game state (shared across scenes)
 window.gameState = {
-    currentLevel: Math.max(
+    currentLevel: Math.min(80, Math.max(
         parseInt(localStorage.getItem('dr_currentLevel') || '1'),
         parseInt(localStorage.getItem('dr_maxLevel') || '1')
-    ),
+    )),
     totalPoints: playerSession.points,
     sessionPoints: 0,
     lives: 3,
@@ -89,7 +89,7 @@ async function generateHMAC(message) {
 window.submitScore = async function (points, level, diamonds) {
     try {
         // OPTIMISTIC LOCAL UPDATE (for guest / offline display)
-        let maxLvl = Math.max(parseInt(localStorage.getItem('dr_maxLevel') || '1'), level);
+        let maxLvl = Math.min(80, Math.max(parseInt(localStorage.getItem('dr_maxLevel') || '1'), level));
         localStorage.setItem('dr_maxLevel', maxLvl);
         localStorage.setItem('dr_currentLevel', level);
         localStorage.setItem('dr_points', window.gameState.totalPoints);
