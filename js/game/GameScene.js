@@ -161,8 +161,7 @@ class GameScene extends Phaser.Scene {
             }
             
             // Filter empty floors to keep goblins away from the START position
-            // AND ensure the goblin has enough adjacent open floor tiles so the player can dodge
-            const minAdjacentFloors = level >= 50 ? 3 : 2; // More open space needed at high levels
+            // AND ensure the goblin has at least 2 adjacent open floor tiles so the player can dodge
             const safeGoblinFloors = emptyFloors.filter(pos => {
                 const distToStart = Math.abs(pos.c - startCol) + Math.abs(pos.r - startRow);
                 if (distToStart <= 4) return false; // Keep at least 4 tiles away from start
@@ -173,12 +172,15 @@ class GameScene extends Phaser.Scene {
                 if (pos.r < rows - 1 && grid[pos.r + 1][pos.c] === 0) adjacentFloors++;
                 if (pos.c > 0 && grid[pos.r][pos.c - 1] === 0) adjacentFloors++;
                 if (pos.c < cols - 1 && grid[pos.r][pos.c + 1] === 0) adjacentFloors++;
-                return adjacentFloors >= minAdjacentFloors;
+                return adjacentFloors >= 2;
             });
 
-            // Scale goblin density cap with level (still keep it possible to dodge)
+            // Cap by percentage of safe floors, but enforce min 4 for level 50+
             const goblinCapPercent = level >= 60 ? 0.32 : (level >= 40 ? 0.28 : 0.25);
-            const maxGoblins = Math.min(totalGoblins, Math.floor(safeGoblinFloors.length * goblinCapPercent));
+            let maxGoblins = Math.min(totalGoblins, Math.max(
+                Math.floor(safeGoblinFloors.length * goblinCapPercent),
+                level >= 50 ? 4 : 0  // Guarantee at least 4 at level 50+
+            ));
             for (let i = 0; i < maxGoblins; i++) {
                 if (safeGoblinFloors.length === 0) break;
                 // We pick from the start of safe floors and ALSO remove from emptyFloors to prevent overlap
