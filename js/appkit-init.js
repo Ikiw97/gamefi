@@ -21,24 +21,24 @@ async function initAppKit() {
 
         const projectId = '20f947d147b6150ebcb5510766f823dd';
 
-        // Define Base network (custom definition since networks export may vary)
-        const base = {
-            id: 8453,
-            name: 'Base',
-            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        // Define Sepolia network (custom definition since networks export may vary)
+        const sepolia = {
+            id: 11155111,
+            name: 'Sepolia',
+            nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 },
             rpcUrls: {
-                default: { http: ['https://mainnet.base.org'] }
+                default: { http: ['https://rpc.sepolia.org'] }
             },
             blockExplorers: {
-                default: { name: 'BaseScan', url: 'https://basescan.org' }
+                default: { name: 'Etherscan', url: 'https://sepolia.etherscan.io' }
             }
         };
 
-        // Try to get Base from networks export, fallback to custom
-        let networkBase = base;
+        // Try to get Sepolia from networks export, fallback to custom
+        let networkSepolia = sepolia;
         if (networks) {
             // networks might export chain definitions
-            if (networks.base) networkBase = networks.base;
+            if (networks.sepolia) networkSepolia = networks.sepolia;
         }
 
         const metadata = {
@@ -51,7 +51,7 @@ async function initAppKit() {
         // Create AppKit with available adapters
         const appKitConfig = {
             projectId,
-            networks: [networkBase],
+            networks: [networkSepolia],
             metadata,
             features: {
                 analytics: true
@@ -64,7 +64,7 @@ async function initAppKit() {
             try {
                 const wagmiAdapter = new WagmiAdapter({
                     projectId,
-                    networks: [networkBase]
+                    networks: [networkSepolia]
                 });
                 appKitConfig.adapters = [wagmiAdapter];
                 console.log("[AppKit] Using WagmiAdapter");
