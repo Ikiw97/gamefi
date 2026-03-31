@@ -1700,12 +1700,6 @@
         const wallet = localStorage.getItem('dr_wallet') || '';
         const isDemo = localStorage.getItem('dr_demo') === '1';
 
-        window.walletState = {
-            connected: !!wallet,
-            wallet: wallet,
-            username: localStorage.getItem('dr_username') || null
-        };
-
         // ── Stars ──
         const sc = document.getElementById('starsContainer');
         for (let i = 0; i < 70; i++) {
@@ -2201,7 +2195,7 @@
 
         // ── Mint Badge (On-Chain ERC-721 on Sepolia) ──
         async function mintBadge() {
-            if (!walletState.connected || !walletState.wallet) {
+            if (!walletState.connected || !walletState.address) {
                 alert('Please connect your wallet first.');
                 return;
             }
@@ -2351,7 +2345,7 @@
 
         // ── Check Mint Status (DB + On-Chain) ──
         async function checkMintBadgeStatus() {
-            if (!walletState.connected || !walletState.wallet) return;
+            if (!walletState.connected || !walletState.address) return;
 
             // Update fee display
             updateMintFeeDisplay();
@@ -2361,7 +2355,7 @@
                 const { data, error } = await window.supabaseClient
                     .from('social_tasks')
                     .select('task_type')
-                    .eq('wallet', walletState.wallet.toLowerCase())
+                    .eq('wallet', walletState.address.toLowerCase())
                     .eq('task_type', 'mint_badge')
                     .maybeSingle();
 
@@ -2378,7 +2372,7 @@
                 try {
                     const rpcProvider = new ethers.JsonRpcProvider('https://rpc.sepolia.org');
                     const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, rpcProvider);
-                    const minted = await nftContract.hasMinted(walletState.wallet);
+                    const minted = await nftContract.hasMinted(walletState.address);
                     if (minted) {
                         try {
                             const btn = document.getElementById('btnMintBadge');
@@ -2388,7 +2382,7 @@
                             const response = await fetch('https://xtiryhqorgvqksqnggnj.supabase.co/functions/v1/mint-badge', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ wallet: walletState.wallet.toLowerCase() })
+                                body: JSON.stringify({ wallet: walletState.address.toLowerCase() })
                             });
                             const data = await response.json();
                             if (response.ok && data.points_awarded) {
