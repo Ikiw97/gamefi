@@ -40,6 +40,7 @@
             --font-pixel-bold: 'Press Start 2P', cursive;
             --font-modern: 'Space Grotesk', sans-serif;
         }
+
         /* ───── NAVBAR ───── */
         .navbar {
             position: fixed;
@@ -1394,7 +1395,8 @@
         <div class="nav-wallet-badge disconnected" id="navWalletBadge">
             <div class="dot"></div>
             <span id="navWalletAddr">Not Connected</span>
-            <i class="ph-bold ph-sign-out disconnect-icon" id="navDisconnectIcon" onclick="disconnectWallet()" title="Disconnect"></i>
+            <i class="ph-bold ph-sign-out disconnect-icon" id="navDisconnectIcon" onclick="disconnectWallet()"
+                title="Disconnect"></i>
         </div>
 
         <div class="nav-mobile-links" style="border-bottom: none;">
@@ -2095,14 +2097,14 @@
         }
 
         // ══════════════════════════════════════════════
-        // ── NFT MINT BADGE — Base Network (ERC-721) ──
+        // ── NFT MINT BADGE — Sepolia Network (ERC-721) ──
         // ══════════════════════════════════════════════
 
-        // ⚠️ IMPORTANT: Update this after deploying ZicoRushBadge.sol to Base
-        const NFT_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // ← REPLACE with deployed contract address
-        const BASE_CHAIN_ID = 8453;
-        const BASE_CHAIN_ID_HEX = '0x2105';
-        const MINT_FEE_USD = 2; // $2 fee
+        // ⚠️ IMPORTANT: Update this after deploying ZicoRushBadge.sol to Sepolia
+        const NFT_CONTRACT_ADDRESS = '0xa30E36B7a8FAB7934fae9ABd4d534aD22F339CCe'; // ← REPLACE with deployed contract address
+        const SEPOLIA_CHAIN_ID = 11155111;
+        const SEPOLIA_CHAIN_ID_HEX = '0xaa36a7';
+        const MINT_FEE_USD = 0; // $2 fee
 
         // Minimal ABI for ZicoRushBadge contract
         const NFT_ABI = [
@@ -2148,12 +2150,12 @@
             }
         }
 
-        // ── Switch to Base Network ──
-        async function switchToBase(provider) {
+        // ── Switch to Sepolia Network ──
+        async function switchToSepolia(provider) {
             try {
                 await provider.request({
                     method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: BASE_CHAIN_ID_HEX }]
+                    params: [{ chainId: SEPOLIA_CHAIN_ID_HEX }]
                 });
             } catch (switchError) {
                 // Chain not added yet — add it
@@ -2161,11 +2163,11 @@
                     await provider.request({
                         method: 'wallet_addEthereumChain',
                         params: [{
-                            chainId: BASE_CHAIN_ID_HEX,
-                            chainName: 'Base',
-                            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                            rpcUrls: ['https://mainnet.base.org'],
-                            blockExplorerUrls: ['https://basescan.org']
+                            chainId: SEPOLIA_CHAIN_ID_HEX,
+                            chainName: 'Sepolia Testnet',
+                            nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 },
+                            rpcUrls: ['https://rpc.sepolia.org'],
+                            blockExplorerUrls: ['https://sepolia.etherscan.io']
                         }]
                     });
                 } else {
@@ -2197,7 +2199,7 @@
             toggle('ach1', true); // Unlock Mint NFT achievement
         }
 
-        // ── Mint Badge (On-Chain ERC-721 on Base) ──
+        // ── Mint Badge (On-Chain ERC-721 on Sepolia) ──
         async function mintBadge() {
             if (!walletState.connected || !walletState.wallet) {
                 alert('Please connect your wallet first.');
@@ -2232,9 +2234,9 @@
                     throw new Error('Wallet provider not found. Please reconnect your wallet.');
                 }
 
-                // 2. Switch to Base network
-                btn.textContent = '⛓️ SWITCHING TO BASE...';
-                await switchToBase(provider);
+                // 2. Switch to Sepolia network
+                btn.textContent = '⛓️ SWITCHING TO SEPOLIA...';
+                await switchToSepolia(provider);
 
                 // 3. Create ethers provider & signer
                 const ethersProvider = new ethers.BrowserProvider(provider);
@@ -2267,7 +2269,7 @@
                 // Show tx hash
                 btn.textContent = '⏳ CONFIRMING TX...';
                 const txLink = document.getElementById('mintTxLink');
-                txLink.href = `https://basescan.org/tx/${tx.hash}`;
+                txLink.href = `https://sepolia.etherscan.io/tx/${tx.hash}`;
                 txLink.textContent = tx.hash.slice(0, 10) + '...' + tx.hash.slice(-8);
                 txInfo.style.display = 'block';
 
@@ -2316,7 +2318,7 @@
                     errorText.style.display = 'none';
                     return;
                 } else if (msg.includes('insufficient funds') || msg.includes('Insufficient')) {
-                    errorText.textContent = 'Insufficient ETH balance on Base network.';
+                    errorText.textContent = 'Insufficient ETH balance on Sepolia network.';
                 } else {
                     errorText.textContent = msg.length > 100 ? msg.slice(0, 100) + '...' : msg;
                 }
@@ -2355,7 +2357,7 @@
             // Also check on-chain if contract is deployed
             if (NFT_CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000') {
                 try {
-                    const rpcProvider = new ethers.JsonRpcProvider('https://mainnet.base.org');
+                    const rpcProvider = new ethers.JsonRpcProvider('https://rpc.sepolia.org');
                     const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, rpcProvider);
                     const minted = await nftContract.hasMinted(walletState.wallet);
                     if (minted) {
