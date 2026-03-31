@@ -43,15 +43,15 @@ class GameScene extends Phaser.Scene {
         let cols = sizeBase + sizeScale;
         let rows = sizeBase + sizeScale;
 
-        // Cap max size so it fits on screen nicely (max around 15x15)
-        cols = Math.min(cols, 15);
-        rows = Math.min(rows, 15);
+        // Cap max size (extended for higher levels, camera zooms out)
+        cols = Math.min(cols, 19);
+        rows = Math.min(rows, 19);
 
-        // Difficulty scaling
-        const totalDiamonds = 5 + Math.floor(level * 1.5);
-        const totalTraps = Math.floor(level * 1.2);
-        const pointsPerDiamond = 10 + (level * 2);
-        const levelCompleteBonus = 100 + (level * 20);
+        // Difficulty scaling – progressive curve up to level 80
+        const totalDiamonds = 5 + Math.floor(level * 1.8);
+        const totalTraps = Math.floor(level * 1.5 + Math.pow(level / 8, 1.8));
+        const pointsPerDiamond = 10 + (level * 3);
+        const levelCompleteBonus = 100 + (level * 30);
 
         // 1. Initialize grid with walls (1)
         const grid = Array.from({ length: rows }, () => Array(cols).fill(1));
@@ -86,7 +86,7 @@ class GameScene extends Phaser.Scene {
         // 2.5 Knock down random walls to create loops (so player can dodge monsters)
         // Without loops, a perfectly 1-tile wide maze makes monsters impassable
         // For goblin levels (>=8), break MORE walls so there are open spaces to dodge
-        const breakPercent = level >= 8 ? 0.30 : 0.15;
+        const breakPercent = Math.min(0.42, 0.15 + (level * 0.004));
         const extraWallsToBreak = Math.floor((cols * rows) * breakPercent);
         for (let i = 0; i < extraWallsToBreak; i++) {
             const r = 1 + Math.floor(rng() * (rows - 2));
@@ -149,7 +149,11 @@ class GameScene extends Phaser.Scene {
         // 7. Place Goblins (level >= 8)
         const goblinPositions = [];
         if (level >= 8) {
-            const totalGoblins = (level - 7); // Level 8: 1 goblin, Level 9: 2, Level 10: 3, etc.
+            // Aggressive goblin scaling at higher levels
+            let totalGoblins = (level - 7);
+            if (level >= 30) totalGoblins += Math.floor((level - 30) / 4);
+            if (level >= 50) totalGoblins += Math.floor((level - 50) / 3);
+            if (level >= 70) totalGoblins += Math.floor((level - 70) / 2);
             
             // Filter empty floors to keep goblins away from the START position
             // AND ensure the goblin has at least 2 adjacent open floor tiles so the player can dodge
@@ -166,8 +170,9 @@ class GameScene extends Phaser.Scene {
                 return adjacentFloors >= 2; // Must have at least 2 open neighbors for dodging
             });
 
-            // Allow up to 25% of the safe floor space to be goblins (so it doesn't get utterly unplayable)
-            const maxGoblins = Math.min(totalGoblins, Math.floor(safeGoblinFloors.length * 0.25));
+            // Scale goblin density cap with level (still keep it possible to dodge)
+            const goblinCapPercent = level >= 60 ? 0.32 : (level >= 40 ? 0.28 : 0.25);
+            const maxGoblins = Math.min(totalGoblins, Math.floor(safeGoblinFloors.length * goblinCapPercent));
             for (let i = 0; i < maxGoblins; i++) {
                 if (safeGoblinFloors.length === 0) break;
                 // We pick from the start of safe floors and ALSO remove from emptyFloors to prevent overlap
@@ -194,13 +199,16 @@ class GameScene extends Phaser.Scene {
     }
 
     getThemeColor(level) {
-        // Change color scheme every 10 levels
+        // Change color scheme every 10 levels – covers 80 levels
         const themes = [
-            0xffffff, // 1-10: Default
+            0xffffff, // 1-10:  Default Stone
             0x99ff99, // 11-20: Greenish Forest
-            0x99ccff, // 21-30: Blueish Ice/Cave
-            0xffcc99, // 31-40: Orangeish Desert/Cavern
-            0xff9999, // 41-50: Redish Hell/Core
+            0x99ccff, // 21-30: Blueish Ice Cave
+            0xffcc99, // 31-40: Orangeish Desert
+            0xff9999, // 41-50: Redish Inferno
+            0xcc99ff, // 51-60: Purple Shadow Realm
+            0x99ffee, // 61-70: Cyan Crystal Depths
+            0xffdd57, // 71-80: Gold Dragon Lair
         ];
         return themes[Math.min(Math.floor((level - 1) / 10), themes.length - 1)];
     }
@@ -262,8 +270,8 @@ class GameScene extends Phaser.Scene {
         const padding = 64; // empty space around the grid
         const zoomX = this.scale.width / (mapW + padding);
         const zoomY = this.scale.height / (mapH + padding);
-        // Zoom in to fit, but don't zoom out (keep min zoom at 1 so large maps can scroll later if needed)
-        const targetZoom = Math.max(1, Math.min(zoomX, zoomY));
+        // Allow zoom out for larger maps at higher levels (min 0.55x)
+        const targetZoom = Math.max(0.55, Math.min(zoomX, zoomY, 2.0));
         this.cameras.main.setZoom(targetZoom);
 
         // ── Build tile groups ──
@@ -404,27 +412,15 @@ class GameScene extends Phaser.Scene {
         this.moveDelay = 180;
         this.lastMove = 0;
 
-        // ── Trap Blinking Logic ──
-        this.time.addEvent({
-            delay: 1500, // Toggle every 1.5 seconds
-            loop: true,
-            callback: () => {
-                if (this.levelComplete) return;
-                this.trapGroup.getChildren().forEach(t => {
-                    const active = !t.getData('active');
-                    t.setData('active', active);
-                    t.setVisible(active);
-
-                    if (active && this.playerCol === t.getData('col') && this.playerRow === t.getData('row')) {
-                        this.hitTrap();
-                    }
-                });
-            }
+        // ── Fire Random Toggle Logic ──
+        // Each fire trap gets its own independent random on/off timer
+        this.trapGroup.getChildren().forEach(trap => {
+            this.setupFireTimer(trap);
         });
 
         // ── Monster Patrol Logic ──
-        // Slower patrol at early goblin levels for fairness; speeds up at higher levels
-        const goblinPatrolDelay = Math.max(800, 1200 - (this.targetLevel - 8) * 50);
+        // Scales to faster patrol at higher levels, min 500ms
+        const goblinPatrolDelay = Math.max(500, 1200 - (this.targetLevel - 8) * 25);
         this.time.addEvent({
             delay: goblinPatrolDelay,
             loop: true,
@@ -528,11 +524,16 @@ class GameScene extends Phaser.Scene {
                     coinImg.setData({ col: c, row: r });
 
                 } else if (cell === 3) {
-                    // Trap – animated fire
+                    // Trap – animated fire with random initial state
                     const t = this.add.sprite(x, y, 'fire1');
                     t.setDisplaySize(this.TILE, this.TILE);
-                    t.setData({ col: c, row: r, active: true });
-                    t.play('fire_anim');
+                    const startActive = Math.random() > 0.35;
+                    t.setData({ col: c, row: r, active: startActive });
+                    if (startActive) {
+                        t.play('fire_anim');
+                    } else {
+                        t.setVisible(false);
+                    }
                     this.trapGroup.add(t);
 
                 } else if (cell === 4) {
@@ -798,7 +799,7 @@ class GameScene extends Phaser.Scene {
         // Submit score to backend
         window.submitScore(
             gs.totalPoints - this.sessionStartPoints,
-            playedLevel + 1, // Report next level reached
+            Math.min(playedLevel + 1, 80), // Report next level reached (cap at 80)
             this.diamondsThisLevel
         );
 
@@ -851,5 +852,43 @@ class GameScene extends Phaser.Scene {
                 onComplete: () => p.destroy()
             });
         }
+    }
+
+    // ─────────────────────────────────────────────
+    // Per-fire random toggle timer
+    setupFireTimer(trap) {
+        if (this.levelComplete) return;
+        const isActive = trap.getData('active');
+        const level = this.targetLevel;
+
+        let delay;
+        if (isActive) {
+            // Fire ON duration – higher levels = stays ON longer
+            const minOn = 800 + Math.min(level * 15, 1000);
+            const maxOn = 1500 + Math.min(level * 25, 1800);
+            delay = minOn + Math.random() * (maxOn - minOn);
+        } else {
+            // Fire OFF duration (safe window) – shrinks at higher levels but always passable
+            const minOff = Math.max(600, 1200 - level * 7);
+            const maxOff = Math.max(1000, 2200 - level * 15);
+            delay = minOff + Math.random() * (maxOff - minOff);
+        }
+
+        this.time.delayedCall(delay, () => {
+            if (this.levelComplete || !trap.scene) return;
+
+            const newActive = !trap.getData('active');
+            trap.setData('active', newActive);
+            trap.setVisible(newActive);
+
+            if (newActive) {
+                trap.play('fire_anim');
+                if (this.playerCol === trap.getData('col') && this.playerRow === trap.getData('row')) {
+                    this.hitTrap();
+                }
+            }
+
+            this.setupFireTimer(trap);
+        });
     }
 }
