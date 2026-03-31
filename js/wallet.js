@@ -31,9 +31,10 @@ function logDebug(msg) {
     }
 }
 
+const savedWallet = localStorage.getItem('dr_wallet');
 window.walletState = {
-    connected: false,
-    address: null,
+    connected: !!savedWallet,
+    address: savedWallet || null,
     provider: null
 };
 
