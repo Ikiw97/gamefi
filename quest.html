@@ -1787,10 +1787,18 @@
             loadGameHistory();
             loadSocialTasks();
             
-            // Ensure mint status is checked as soon as possible
-            if (window.walletState.address) {
-                checkMintBadgeStatus();
-            }
+            // Start polling for mint status (every 3s for 30s)
+            let checkCount = 0;
+            const mintCheckInterval = setInterval(() => {
+                const addr = window.walletState.address || localStorage.getItem('dr_wallet');
+                if (addr) {
+                    console.log("CheckMint: Attempt", ++checkCount, "for", addr);
+                    checkMintBadgeStatus();
+                    if (checkCount >= 5) clearInterval(mintCheckInterval); // Stop after 5 successful attempts
+                }
+            }, 3000);
+            
+            setTimeout(() => clearInterval(mintCheckInterval), 30000);
 
             // Check if returning from Twitter OAuth callback
             handleTwitterOAuthCallback();
@@ -2363,6 +2371,12 @@
         async function checkMintBadgeStatus() {
             const addr = window.walletState.address || localStorage.getItem('dr_wallet');
             if (!addr) return;
+            
+            // Sync local walletState just in case
+            if (!window.walletState.address) window.walletState.address = addr;
+            if (!window.walletState.connected) window.walletState.connected = true;
+
+            console.log("CheckMint: Starting check for", addr);
 
             // Update fee display
             updateMintFeeDisplay();
