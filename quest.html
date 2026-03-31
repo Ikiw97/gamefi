@@ -2380,6 +2380,28 @@
                     const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, rpcProvider);
                     const minted = await nftContract.hasMinted(walletState.wallet);
                     if (minted) {
+                        try {
+                            const btn = document.getElementById('btnMintBadge');
+                            if (btn && btn.textContent !== '✅ MINTED') {
+                                btn.textContent = '🎯 SYNCING DATA...';
+                            }
+                            const response = await fetch('https://xtiryhqorgvqksqnggnj.supabase.co/functions/v1/mint-badge', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ wallet: walletState.wallet.toLowerCase() })
+                            });
+                            const data = await response.json();
+                            if (response.ok && data.points_awarded) {
+                                let currentPoints = parseInt(localStorage.getItem('dr_points') || '0');
+                                currentPoints += data.points_awarded;
+                                document.getElementById('statPoints').textContent = fmtNum(currentPoints);
+                                localStorage.setItem('dr_points', currentPoints.toString());
+                                showTaskToast('Badge auto-synced! +100K Points', false);
+                            }
+                            if (btn) btn.textContent = '✅ MINTED';
+                        } catch (syncErr) {
+                            console.warn('Auto-sync failed:', syncErr);
+                        }
                         markMintedUI();
                     }
                 } catch (e) {
