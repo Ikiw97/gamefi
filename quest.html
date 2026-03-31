@@ -1700,6 +1700,12 @@
         const wallet = localStorage.getItem('dr_wallet') || '';
         const isDemo = localStorage.getItem('dr_demo') === '1';
 
+        window.walletState = {
+            connected: !!wallet,
+            address: wallet,
+            isDemo: isDemo
+        };
+
         // ── Stars ──
         const sc = document.getElementById('starsContainer');
         for (let i = 0; i < 70; i++) {
