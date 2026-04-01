@@ -576,11 +576,11 @@ function markMintedUI() {
     if (btn) {
         btn.textContent = '✅ MINTED';
         btn.className = 'btn-mint-done';
-        btn.style.cssText = 'background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e; pointer-events: none; opacity: 1;';
+        btn.style.cssText = 'background: rgba(59, 130, 246, 0.15); border: 2px solid rgba(59, 130, 246, 0.4); color: #3b82f6; pointer-events: none; opacity: 1; padding: 0.85rem 2rem; font-size: 0.85rem; font-weight: 900; border-radius: 12px; font-family: "Space Grotesk", monospace; letter-spacing: 0.08em;';
     }
     if (badge) {
         badge.textContent = 'Owned';
-        badge.style.cssText = 'background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.3); color: #22c55e;';
+        badge.style.cssText = 'background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.3); color: #3b82f6;';
     }
     toggle('ach1', true);
 }
