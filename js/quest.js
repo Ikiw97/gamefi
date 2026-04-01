@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const elLvl = document.getElementById('avatarLevel');
     if (elLvl) elLvl.textContent = level;
     const elLvlB = document.getElementById('levelBadge');
-    if (elLvlB) elLvlB.textContent = `âš¡ LVL ${level}`;
+    if (elLvlB) elLvlB.textContent = `⚡ LVL ${level}`;
     const elPts = document.getElementById('statPoints');
     if (elPts) elPts.textContent = fmtNum(points);
 
@@ -191,7 +191,7 @@ async function loadPlayerData() {
         const elLvl = document.getElementById('avatarLevel');
         if (elLvl) elLvl.textContent = level;
         const elLvlB = document.getElementById('levelBadge');
-        if (elLvlB) elLvlB.textContent = `âš¡ LVL ${level}`;
+        if (elLvlB) elLvlB.textContent = `⚡ LVL ${level}`;
         const elGames = document.getElementById('statGames');
         if (elGames) elGames.textContent = fmtNum(games);
         const elRefs = document.getElementById('refCount');
