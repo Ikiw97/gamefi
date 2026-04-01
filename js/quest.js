@@ -1,4 +1,4 @@
-﻿/**
+/**
  * quest.js
  * Main logic for the Quest page (Profile, Social Tasks, NFT Minting).
  * Separated from HTML for better organization and security.
@@ -574,7 +574,7 @@ function markMintedUI() {
     const badge = document.getElementById('mintStatusBadge');
     
     if (btn) {
-        btn.textContent = 'âœ… MINTED';
+        btn.textContent = '✅ MINTED';
         btn.className = 'btn-mint-done';
         btn.style.cssText = 'background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e; pointer-events: none; opacity: 1;';
     }
@@ -602,7 +602,7 @@ async function mintBadge() {
 
     errorText.style.display = 'none';
     txInfo.style.display = 'none';
-    btn.textContent = 'â³ PREPARING...';
+    btn.textContent = '⏳ PREPARING...';
     btn.style.pointerEvents = 'none';
     btn.style.opacity = '0.7';
 
@@ -612,7 +612,7 @@ async function mintBadge() {
         if (!provider && window.ethereum) provider = window.ethereum;
         if (!provider) throw new Error('Wallet provider not found.');
 
-        btn.textContent = 'â›“ï¸ SWITCHING...';
+        btn.textContent = '⛓️ SWITCHING...';
         await switchToSepolia(provider);
 
         const ethersProvider = new ethers.BrowserProvider(provider);
@@ -621,10 +621,10 @@ async function mintBadge() {
 
         const nftContract = new ethers.Contract(window.NFT_CONFIG.address, window.NFT_CONFIG.abi, signer);
 
-        btn.textContent = 'ðŸ” CHECKING...';
+        btn.textContent = '🔍 CHECKING...';
         const alreadyMinted = await nftContract.hasMinted(signerAddress);
         if (alreadyMinted) {
-            btn.textContent = 'ðŸŽ¯ SYNCING...';
+            btn.textContent = '🎯 SYNCING...';
             try {
                 const response = await fetch(`${SUPABASE_URL}/functions/v1/mint-badge`, {
                     method: 'POST',
@@ -639,22 +639,22 @@ async function mintBadge() {
                 }
             } catch (e) {}
             markMintedUI();
-            btn.textContent = 'âœ… ALREADY MINTED';
+            btn.textContent = '✅ ALREADY MINTED';
             return;
         }
 
         const mintPrice = await nftContract.mintPrice();
-        btn.textContent = `ðŸ’Ž MINTING (${ethers.formatEther(mintPrice)} ETH)...`;
+        btn.textContent = `💎 MINTING (${ethers.formatEther(mintPrice)} ETH)...`;
 
         const tx = await nftContract.mint({ value: mintPrice });
-        btn.textContent = 'â³ CONFIRMING...';
+        btn.textContent = '⏳ CONFIRMING...';
         const txLink = document.getElementById('mintTxLink');
         txLink.href = `https://sepolia.etherscan.io/tx/${tx.hash}`;
         txLink.textContent = tx.hash.slice(0, 10) + '...';
         txInfo.style.display = 'block';
 
         await tx.wait();
-        btn.textContent = 'ðŸŽ¯ AWARDING...';
+        btn.textContent = '🎯 AWARDING...';
         const response = await fetch(`${SUPABASE_URL}/functions/v1/mint-badge`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
@@ -667,15 +667,15 @@ async function mintBadge() {
             localStorage.setItem('dr_points', pts.toString());
         }
         markMintedUI();
-        btn.textContent = 'âœ… MINTED';
-        showTaskToast('ðŸŽ‰ NFT Badge minted! +100K Points');
+        btn.textContent = '✅ MINTED';
+        showTaskToast('🎉 NFT Badge minted! +100K Points');
 
     } catch (err) {
         console.error('Mint error:', err);
         const msg = err.message || 'Minting failed';
         errorText.textContent = msg.includes('user rejected') ? 'Transaction cancelled.' : msg.slice(0, 60);
         errorText.style.display = 'block';
-        btn.textContent = 'ðŸ’Ž MINT BADGE NOW';
+        btn.textContent = '💎 MINT BADGE NOW';
         btn.style.pointerEvents = 'auto';
         btn.style.opacity = '1';
     }
@@ -722,7 +722,7 @@ function showTaskToast(message, isError = false) {
 
 function copyRefCode() {
     const code = document.getElementById('refCode').textContent;
-    if (!code || code === 'â€”') return;
+    if (!code || code === '—') return;
     navigator.clipboard.writeText(code).then(() => {
         const btn = document.querySelector('.referral-code-box .btn-copy');
         btn.textContent = 'Copied!';
@@ -744,8 +744,8 @@ function copyWallet() {
     if (!wallet) return;
     navigator.clipboard.writeText(wallet).then(() => {
         const el = document.querySelector('.copy-icon');
-        el.textContent = 'âœ…';
-        setTimeout(() => { el.textContent = 'ðŸ“‹'; }, 1500);
+        el.textContent = '✅';
+        el.textContent = '📋';
     });
 }
 
