@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Zico Rush — Quest</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Zico Rush" />
+    <link rel="apple-touch-icon" href="assets/sprites/logos.png" />
+    <meta name="description"
+        content="View your Zico Rush GameFi player profile, stats, referral code, and game history." />
+    <link rel="stylesheet" href="css/style.css" />
+    <!-- Pixel Font (VT323) and Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;700;900&family=VT323&display=swap"
+        rel="stylesheet">
+    <link rel="icon" href="assets/sprites/logos.png" />
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <!-- Reown AppKit for Multi-Wallet Support -->
+    <script type="module" src="js/appkit-init.js"></script>
+    <!-- Ethers v6 for wallet support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
+    <link rel="stylesheet" href="css/quest.css" />
+</head>
+
+<body>
+    <div class="bg-animated"></div>
+    <div class="stars" id="starsContainer"></div>
+
+    <!-- ————— NAVBAR ————— -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">
+            <span class="brand-text">ZICO RUSH</span>
+        </a>
+
+        <div class="nav-links">
+            <a href="index.html" class="nav-link"><i class="ph-fill ph-house"></i> Home</a>
+            <a href="game.html" class="nav-link"><i class="ph-fill ph-game-controller"></i> Play</a>
+            <a href="leaderboard.html" class="nav-link"><i class="ph-fill ph-trophy"></i> Leaderboard</a>
+            <a href="quest.html" class="nav-link active"><i class="ph-fill ph-user"></i> Quest</a>
+        </div>
+
+        <div class="nav-wallet-badge disconnected" id="navWalletBadge">
+            <div class="dot"></div>
+            <span id="navWalletAddr">Not Connected</span>
+            <i class="ph-bold ph-sign-out disconnect-icon" id="navDisconnectIcon" onclick="disconnectWallet()"
+                title="Disconnect"></i>
+        </div>
+
+        <div class="nav-mobile-links" style="border-bottom: none;">
+            <a href="index.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-house" style="color:#94a3b8;"></i></a>
+            <a href="game.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-game-controller" style="color:#94a3b8;"></i></a>
+            <a href="leaderboard.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-trophy" style="color:#94a3b8;"></i></a>
+            <a href="quest.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-user" style="color:#ffb300;"></i></a>
+        </div>
+    </nav>
+
+    <!-- ————— PAGE BODY ————— -->
+    <div class="page-body">
+        <div class="profile-wrapper">
+
+            <!-- Not Connected State -->
+            <div id="notConnected" style="display:none">
+                <div class="not-connected-card">
+                    <div class="nc-icon"><i class="ph-fill ph-lock-key"></i></div>
+                    <h2>WALLET NOT CONNECTED</h2>
+                    <p>Connect your crypto wallet to view your player profile, game stats, and referral rewards.</p>
+                    <a href="index.html" class="btn-connect-go">🦊 Connect Wallet</a>
+                </div>
+            </div>
+
+            <!-- ————— PROFILE CONTENT ————— -->
+            <div id="profileContent" style="display:none">
+
+                <!-- Profile Header -->
+                <div class="profile-header-card parchment-theme"
+                    style="background: url('assets/sprites/cards.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
+                    <div class="profile-avatar-box">
+                        <div class="profile-avatar" id="profileAvatar" onclick="openCharSelect()"
+                            style="cursor: pointer; position: relative; overflow: hidden;" title="Change Character">👤
+                        </div>
+                        <div class="avatar-level-ring" id="avatarLevel">1</div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="username" id="profileUsername">Player</div>
+                        <div class="wallet-addr">
+                            <span id="profileWallet">0x0000...0000</span>
+                            <span class="copy-icon" onclick="copyWallet()" title="Copy address">📋</span>
+                        </div>
+                        <div class="profile-badges">
+                            <span class="p-badge level" id="levelBadge">⚡ LVL 1</span>
+                            <span class="p-badge season">🚀 SEASON 1</span>
+                            <span class="p-badge demo" id="demoBadge" style="display:none">🔵 DEMO</span>
+                        </div>
+                    </div>
+                    <div class="profile-header-actions">
+                        <a href="game.html" class="btn-play-now">⚡ PLAY NOW</a>
+                    </div>
+                </div>
+
+                <!-- Mint Badge Section -->
+                <div class="glass-card parchment-theme"
+                    style="margin-bottom: 1.25rem; background: url('assets/sprites/cards.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
+                    <div class="card-header" style="margin-bottom: 0.5rem; position: relative; z-index: 2;">
+                        <div class="card-title" style="color: #000; text-shadow: none;"><i
+                                class="ph-fill ph-certificate" style="color: #000;"></i> Early Adopter NFT</div>
+                        <span class="card-badge" style="background: rgba(0,0,0,0.05); border-color: #000; color: #000;"
+                            id="mintStatusBadge">Available</span>
+                    </div>
+                    <p class="ref-info"
+                        style="color: #000; text-shadow: none; margin-bottom: 0.75rem; position: relative; z-index: 2;">
+                            Status and a massive <strong style="color: #000;">+100,000 Points</strong> bonus.
+                        Only one mint per wallet!</p>
+                    <!-- Network Info -->
+                    <div style="display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <div
+                            style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.8rem; font-family: 'Space Grotesk', monospace; background: rgba(0, 0, 0, 0.05); border: 1px solid #000000; color: #000000; font-weight: 800; text-shadow: none;">
+                            ⛓️ Base Network
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <button id="btnMintBadge" onclick="mintBadge()"
+                            class="btn-play-now" style="background: #000; color: #fff; border: none;">
+                            💎 MINT BADGE NOW
+                        </button>
+                        <span id="mintErrorText"
+                            style="color: #ef4444; font-size: 0.8rem; display: none; font-weight: bold;"></span>
+                    </div>
+                    <!-- Tx Hash Display (hidden until tx sent) -->
+                    <div id="mintTxInfo"
+                        style="display: none; margin-top: 0.75rem; padding: 0.6rem 0.85rem; background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.15); border-radius: 10px; font-size: 0.6rem; color: #94a3b8; font-family: monospace; word-break: break-all;">
+                        🔗 Tx: <a id="mintTxLink" href="#" target="_blank"
+                            style="color: #22c55e; text-decoration: underline;"></a>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-row">
+                    <div class="stat-card"
+                        style="background-image: url('assets/sprites/card/card1.png'); --stat-accent: #f8fafc">
+                        <div class="s-icon"><i class="ph-fill ph-sparkle"></i></div>
+                        <div class="s-value" id="statPoints">0</div>
+                        <div class="s-label">Points</div>
+                    </div>
+                    <div class="stat-card"
+                        style="background-image: url('assets/sprites/card/card2.png'); --stat-accent: #f8fafc">
+                        <div class="s-icon"><i class="ph-fill ph-coin"></i></div>
+                        <div class="s-value" id="statCoins">0</div>
+                        <div class="s-label">Coins</div>
+                    </div>
+                    <div class="stat-card"
+                        style="background-image: url('assets/sprites/card/card3.png'); --stat-accent: #f8fafc">
+                        <div class="s-icon"><i class="ph-fill ph-trophy"></i></div>
+                        <div class="s-value" id="statRank">—</div>
+                        <div class="s-label">Rank</div>
+                    </div>
+                    <div class="stat-card"
+                        style="background-image: url('assets/sprites/card/card2.png'); --stat-accent: #f8fafc">
+                        <div class="s-icon" style="color: #ffffff; text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);"><i
+                                class="ph-fill ph-game-controller"></i></div>
+                        <div class="s-value" id="statGames">0</div>
+                        <div class="s-label">Games</div>
+                    </div>
+                </div>
+
+                <!-- Two-column content -->
+                <div class="content-grid">
+
+                    <!-- LEFT: Referral -->
+                    <div class="glass-card parchment-theme"
+                        style="background: url('assets/sprites/cards2.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
+                        <div class="card-header" style="position: relative; z-index: 2;">
+                            <div class="card-title">🎁 Referral</div>
+                            <span class="card-badge" id="refCountBadge">0 Referred</span>
+                        </div>
+                        <div class="referral-code-box">
+                            <span class="ref-code" id="refCode">—</span>
+                            <button class="btn-copy" onclick="copyRefCode()">Copy</button>
+                        </div>
+                        <div class="ref-link">
+                            <span id="refLinkBox"></span>
+                            <button class="btn-copy" onclick="copyRefLink()"
+                                style="flex-shrink: 0; padding: 0.3rem 0.6rem; font-size: 0.55rem;">Copy Link</button>
+                        </div>
+                        <div class="ref-info">
+                            Share your referral code with friends. You both earn <strong>+25 bonus
+                                points</strong> when they join!
+                        </div>
+                        <div class="ref-stats">
+                            <div class="ref-stat">
+                                <div class="rs-val" id="refCount">0</div>
+                                <div class="rs-lbl">Friends</div>
+                            </div>
+                            <div class="ref-stat">
+                                <div class="rs-val" id="refBonus">0</div>
+                                <div class="rs-lbl">Bonus Pts</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Achievements -->
+                    <div class="glass-card parchment-theme"
+                        style="background: url('assets/sprites/cards2.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
+                        <div class="card-header" style="position: relative; z-index: 2;">
+                            <div class="card-title">🏅 Achievements</div>
+                        </div>
+                        <div class="achievement-grid" id="achievementGrid">
+                            <div class="achievement locked" id="ach1">
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge1.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
+                                <div class="ach-name">Mint NFT</div>
+                            </div>
+                            <div class="achievement locked" id="ach2">
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge2.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
+                                <div class="ach-name">100K Coins</div>
+                            </div>
+                            <div class="achievement locked" id="ach3">
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge3.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
+                                <div class="ach-name">Level 50</div>
+                            </div>
+                            <div class="achievement locked" id="ach4">
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge4.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
+                                <div class="ach-name">Level 25</div>
+                            </div>
+                            <div class="achievement locked" id="ach5">
+                                <div class="ach-icon"
+                                    style="background: none; -webkit-text-fill-color: initial; filter: none;"><img
+                                        src="assets/sprites/badge/badge5.png"
+                                        style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4)); border-radius: 8px;">
+                                </div>
+                                <div class="ach-name">20 Referrals</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Tasks -->
+                <div class="glass-card social-tasks-section parchment-theme"
+                    style="background: url('assets/sprites/cards2.png') center/100% 100% no-repeat; background-color: transparent; border: none; box-shadow: none; position: relative; border-radius: 0;">
+                    <div class="card-header">
+                        <div class="card-title">𝕏 Social Tasks</div>
+                        <span class="card-badge" id="socialTasksBadge">0/4 Done</span>
+                    </div>
+                    <div class="task-list" id="socialTaskList">
+                        <!-- Connect Twitter -->
+                        <div class="task-item" id="task-twitter_connect" data-task="twitter_connect" data-points="1500">
+                            <div class="task-icon"
+                                style="--task-bg: rgba(255,255,255,0.08); --task-border: rgba(255,255,255,0.2)">𝕏</div>
+                            <div class="task-info">
+                                <div class="task-name">Connect Twitter</div>
+                                <div class="task-desc">Follow us on Twitter to stay updated</div>
+                            </div>
+                            <div class="task-points">+1500 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_connect')">Connect</button>
+                        </div>
+                        <!-- Follow -->
+                        <div class="task-item" id="task-twitter_follow" data-task="twitter_follow" data-points="1000">
+                            <div class="task-icon"
+                                style="--task-bg: rgba(168,85,247,0.12); --task-border: rgba(168,85,247,0.25)">👥</div>
+                            <div class="task-info">
+                                <div class="task-name">Follow @zicorush_</div>
+                                <div class="task-desc">Follow our official Twitter account</div>
+                            </div>
+                            <div class="task-points">+1000 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_follow')">Follow</button>
+                        </div>
+                        <!-- Retweet -->
+                        <div class="task-item" id="task-twitter_retweet" data-task="twitter_retweet" data-points="800">
+                            <div class="task-icon"
+                                style="--task-bg: rgba(34,197,94,0.12); --task-border: rgba(34,197,94,0.25)">🔁</div>
+                            <div class="task-info">
+                                <div class="task-name">Retweet Pinned Tweet</div>
+                                <div class="task-desc">Retweet our pinned announcement</div>
+                            </div>
+                            <div class="task-points">+800 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_retweet')">Retweet</button>
+                        </div>
+                        <!-- Like -->
+                        <div class="task-item" id="task-twitter_like" data-task="twitter_like" data-points="800">
+                            <div class="task-icon"
+                                style="--task-bg: rgba(239,68,68,0.12); --task-border: rgba(239,68,68,0.25)">❤️</div>
+                            <div class="task-info">
+                                <div class="task-name">Like Tweet</div>
+                                <div class="task-desc">Like our pinned tweet</div>
+                            </div>
+                            <div class="task-points">+800 PTS</div>
+                            <button class="btn-task action" onclick="doSocialTask('twitter_like')">Like</button>
+                        </div>
+                    </div>
+                    <div class="social-progress">
+                        <div class="social-progress-bar">
+                            <div class="social-progress-fill" id="socialProgressFill" style="width: 0%"></div>
+                        </div>
+                        <span class="social-progress-text" id="socialProgressText">0/4 tasks completed</span>
+                    </div>
+                </div>
+
+
+
+                <!-- Disconnect -->
+                <div class="disconnect-row">
+                    <button class="btn-disconnect" onclick="disconnectWallet()">🔌 Disconnect Wallet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ——— Character Selection Modal ——— -->
+    <div class="char-modal-overlay" id="charSelModal">
+        <div class="char-modal-card">
+            <div class="char-modal-title">CHOOSE CHARACTER</div>
+            <div class="char-modal-options">
+                <div class="char-modal-opt" id="opt-player1" onclick="saveCharProfile('player1')">
+                    <img src="assets/sprites/player1.png">
+                </div>
+                <div class="char-modal-opt" id="opt-player2" onclick="saveCharProfile('player2')">
+                    <img src="assets/sprites/player2.png">
+                </div>
+            </div>
+            <button class="char-modal-close" onclick="closeCharSelect()">Close</button>
+        </div>
+    </div>
+
+    <!-- NFT Contract Custom Config -->
+    <script src="js/contract-config.js"></script>
+    <!-- Quest Page Logic -->
+    <script src="js/quest.js"></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Zico Rush – GameFi Airdrop</title>
+    <meta name="description"
+        content="Play Zico Rush, collect points, and earn crypto airdrop rewards. Connect your wallet and start mining Zico now!" />
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#0a101d" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Zico Rush" />
+    <link rel="apple-touch-icon" href="assets/sprites/logos.png" />
+    <!-- Ethers v6 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Global Error Debugger (Visible on Mobile) -->
+    <script>
+        window.appKitInitError = null;
+        window.LOG_BUFFER = [];
+        const originalLog = console.log;
+        console.log = function (...args) {
+            window.LOG_BUFFER.push("[LOG] " + args.join(" "));
+            if (window.LOG_BUFFER.length > 20) window.LOG_BUFFER.shift();
+            originalLog.apply(console, args);
+        };
+        const originalError = console.error;
+        console.error = function (...args) {
+            window.LOG_BUFFER.push("[ERR] " + args.join(" "));
+            if (window.LOG_BUFFER.length > 20) window.LOG_BUFFER.shift();
+            originalError.apply(console, args);
+        };
+    </script>
+
+    <!-- Reown AppKit for Multi-Wallet Support (MetaMask, OKX, Bitget, etc.) -->
+    <script type="module" src="js/appkit-init.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <!-- Pixel Font (VT323) and Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;700;900&family=VT323&display=swap"
+        rel="stylesheet">
+    <link rel="icon" href="assets/sprites/logos.png" />
+    <link rel="stylesheet" href="css/index.css" />
+</head>
+
+<body>
+    <!-- Background Decor -->
+    <div class="bg-animated"></div>
+    <div class="stars"></div>
+    <div class="brick-border left"></div>
+    <div class="brick-border right"></div>
+
+
+    <!-- ───── NAVBAR ───── -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">
+            <span class="brand-text">ZICO RUSH</span>
+        </a>
+
+        <div class="nav-links">
+            <a href="index.html" class="nav-link active"><i class="ph-fill ph-house"></i> Home</a>
+            <a href="game.html" class="nav-link" onclick="return checkWalletAndPlay(event)"><i class="ph-fill ph-game-controller"></i> Play</a>
+            <a href="leaderboard.html" class="nav-link"><i class="ph-fill ph-trophy"></i> Leaderboard</a>
+            <a href="quest.html" class="nav-link"><i class="ph-fill ph-user"></i> Quest</a>
+        </div>
+
+        <div class="nav-wallet-badge" id="navWalletBtn" onclick="connectWallet()">
+            <div class="dot"></div>
+            <span id="navWalletText">Connect</span>
+            <i class="ph-bold ph-sign-out disconnect-icon" id="navDisconnectIcon" onclick="event.stopPropagation(); window.onWalletDisconnectUI();" title="Disconnect"></i>
+        </div>
+
+        <div class="nav-mobile-links" style="border-bottom: none;">
+            <a href="index.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-house" style="color:#ffb300;"></i></a>
+            <a href="game.html" class="nav-mobile-link" onclick="return checkWalletAndPlay(event)" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-game-controller" style="color:#94a3b8;"></i></a>
+            <a href="leaderboard.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-trophy" style="color:#94a3b8;"></i></a>
+            <a href="quest.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i
+                    class="ph-fill ph-user" style="color:#94a3b8;"></i></a>
+        </div>
+    </nav>
+
+    <!-- ───── MAIN CONTENT ───── -->
+    <main class="main-container">
+
+        <div class="hero-split">
+            <!-- LEFT COLUMN (Title) -->
+            <div class="hero-left">
+                <div class="pickaxe-icon-container">
+                </div>
+                <div class="hero-title-group">
+                    <h1 class="pixel-title">ZICO<br>RUSH</h1>
+                    <img src="assets/sprites/logos.png" class="hero-coin-logo" alt="Zico Coin">
+                </div>
+                <p>Play • Mine • Earn • Airdrop</p>
+                <div class="hero-tags">
+                    <span class="tag tag-orange"><i class="ph-fill ph-coin"></i> AIRDROP SEASON 1</span>
+                    <span class="tag tag-blue"><i class="ph-fill ph-link"></i> BASE CHAIN</span>
+                    <span class="tag tag-green"><i class="ph-fill ph-check-circle"></i> FREE TO PLAY</span>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN (Action Cards) -->
+            <div class="hero-right">
+
+                <!-- Progress Steps -->
+                <div class="progress-steps" id="heroProgressSteps">
+                    <div class="step" id="step-wallet">
+                        <div class="step-box">1</div>
+                        <span class="step-label">Wallet</span>
+                    </div>
+                    <div class="step" id="step-profile">
+                        <div class="step-box">2</div>
+                        <span class="step-label">Profile</span>
+                    </div>
+                    <div class="step" id="step-verify">
+                        <div class="step-box">3</div>
+                        <span class="step-label">Verify</span>
+                    </div>
+                    <div class="step" id="step-play">
+                        <div class="step-box">4</div>
+                        <span class="step-label">Play</span>
+                    </div>
+                </div>
+
+                <!-- Connect Wallet Panel -->
+                <div class="panel panel-ice">
+                    <div class="panel-header">
+                        Connect Crypto Wallet
+                    </div>
+
+                    <button class="btn-blue" id="mainConnectBtn" onclick="connectWallet()">
+                        <span id="connectBtnText">Connect Wallet</span>
+                    </button>
+
+                    <div class="wallet-address" id="mainWalletDisplay" style="display:none;">0x...</div>
+                    <div class="wallet-link">
+                        No MetaMask? <a href="https://metamask.io/download/" target="_blank">Download here</a>. Works
+                        with any EVM wallet.
+                    </div>
+                </div>
+
+                <!-- Play Panel -->
+                <div class="panel panel-wood" style="margin-top: 2rem;">
+
+                    <div class="panel-header">
+                        Ready to Play!
+                    </div>
+
+                    <div class="ref-label"><i class="ph-bold ph-link"></i> Your Referral Code (share with friends):
+                    </div>
+                    <div class="ref-input-box">
+                        <input type="text" id="displayReferral" value="-" readonly>
+                        <i class="ph-fill ph-treasure-chest"></i>
+                    </div>
+
+                    <button class="btn-gold" onclick="checkWalletAndPlay(event)">
+                        <i class="ph-fill ph-sparkle"></i> PLAY NOW <i class="ph-fill ph-magic-wand"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ───── BOTTOM STATS CRATES ───── -->
+        <div class="stats-row">
+            <div class="crate">
+                <div class="crate-val" id="stat-players">0</div>
+                <div class="crate-label">Total Players</div>
+            </div>
+            <div class="crate">
+                <div class="crate-val" id="stat-coins" style="color: #f59e0b;">0</div>
+                <div class="crate-label">Coins Mined</div>
+            </div>
+            <div class="crate">
+                <div class="crate-val purple" id="stat-points">0</div>
+                <div class="crate-label">Total Points</div>
+            </div>
+            <div class="crate">
+                <div class="crate-val green" id="stat-season">S1</div>
+                <div class="crate-label">Season</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ── REGISTRATION MODAL ── -->
+    <div id="regModal">
+        <div class="reg-card">
+            <div class="reg-title">⚔️ CREATE ACCOUNT</div>
+            <div class="reg-sub" id="regWalletSub">Wallet connected! Fill in your details to start.</div>
+
+            <!-- Username -->
+            <div class="reg-field">
+                <label class="reg-label" for="regUsername">👤 Username <span style="color:#ef4444">*</span></label>
+                <input class="reg-input" id="regUsername" type="text" placeholder="e.g. CryptoMiner42" maxlength="20"
+                    autocomplete="off">
+            </div>
+
+            <!-- Referral Code -->
+            <div class="reg-field">
+                <label class="reg-label" for="regReferral">🔗 Referral Code <span
+                        style="color:#64748b">(optional)</span></label>
+                <input class="reg-input" id="regReferral" type="text" placeholder="Enter code if you have one"
+                    maxlength="10" autocomplete="off" style="text-transform:uppercase;">
+            </div>
+
+            <!-- Captcha -->
+            <div class="reg-field">
+                <span id="turnstileStatus" style="display:none;"></span>
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAACxz4waG96exCOCx" data-callback="onTurnstileSuccess" data-error-callback="onTurnstileError" data-expired-callback="onTurnstileExpired" data-theme="dark"></div>
+            </div>
+
+            <div class="reg-msg" id="regMsg"></div>
+
+            <button class="reg-btn" id="regSubmitBtn" disabled onclick="submitRegistration()">🎮 START PLAYING</button>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="customAlert">
+        <div class="alert-card">
+            <div class="alert-message" id="alertMessage">Message</div>
+            <button class="alert-btn" onclick="closeCustomAlert()">OK</button>
+        </div>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/index.js"></script>
+</body>
+
+</html>

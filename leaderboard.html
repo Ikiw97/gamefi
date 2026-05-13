@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Zico Rush – Leaderboard</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Zico Rush" />
+    <link rel="apple-touch-icon" href="assets/sprites/logos.png" />
+    <meta name="description" content="Zico Rush GameFi leaderboard – top players by points." />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/leaderboard.css" />
+    <link rel="icon" href="assets/sprites/logos.png" />
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Reown AppKit for Multi-Wallet Support -->
+    <script type="module" src="js/appkit-init.js"></script>
+    <!-- Ethers v6 for wallet support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
+</head>
+
+<body>
+    <div class="bg-animated"></div>
+    <div class="stars" id="starsContainer"></div>
+
+    <!-- ───── NAVBAR ───── -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">
+            <span class="brand-text">ZICO RUSH</span>
+        </a>
+
+        <div class="nav-links">
+            <a href="index.html" class="nav-link"><i class="ph-fill ph-house"></i> Home</a>
+            <a href="game.html" class="nav-link"><i class="ph-fill ph-game-controller"></i> Play</a>
+            <a href="leaderboard.html" class="nav-link active"><i class="ph-fill ph-trophy"></i> Leaderboard</a>
+            <a href="quest.html" class="nav-link"><i class="ph-fill ph-user"></i> Quest</a>
+        </div>
+
+        <div class="nav-wallet-badge" id="navWalletBtn" onclick="connectWallet()">
+            <div class="dot"></div>
+            <span id="navWalletText">Connect</span>
+            <i class="ph-bold ph-sign-out disconnect-icon" id="navDisconnectIcon" onclick="event.stopPropagation(); window.onWalletDisconnectUI();" title="Disconnect"></i>
+        </div>
+
+        <div class="nav-mobile-links" style="border-bottom: none;">
+            <a href="index.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i class="ph-fill ph-house" style="color:#94a3b8;"></i></a>
+            <a href="game.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i class="ph-fill ph-game-controller" style="color:#94a3b8;"></i></a>
+            <a href="leaderboard.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i class="ph-fill ph-trophy" style="color:#ffb300;"></i></a>
+            <a href="quest.html" class="nav-mobile-link" style="border-bottom: none; text-decoration: none;"><i class="ph-fill ph-user" style="color:#94a3b8;"></i></a>
+        </div>
+    </nav>
+
+    <div class="lb-container">
+
+        <div class="lb-hero">
+            <div
+                style="font-size:3.5rem; margin-bottom:0.4rem; background: linear-gradient(135deg, #f59e0b, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 4px 15px rgba(245, 158, 11, 0.4));">
+                <i class="ph-fill ph-trophy"></i>
+            </div>
+            <h1>LEADERBOARD</h1>
+            <p>Top Zico Rush players this season</p>
+        </div>
+
+        <!-- Global Stats -->
+        <div class="stats-row" id="globalStats">
+            <div class="stat-chip">
+                <div class="val" id="gs_players">—</div>
+                <div class="lbl">Players</div>
+            </div>
+            <div class="stat-chip">
+                <div class="val" id="gs_diamonds">—</div>
+                <div class="lbl">Coins</div>
+            </div>
+            <div class="stat-chip">
+                <div class="val" id="gs_points">—</div>
+                <div class="lbl">Total Points</div>
+            </div>
+        </div>
+
+        <!-- My Rank Banner -->
+        <div class="my-rank-banner" id="myRankBanner"></div>
+
+        <!-- Top 3 Podium -->
+        <div class="top3-bar" id="top3Bar" style="display:none">
+            <div class="top3-item place2" id="top2">
+                <span class="top3-medal">🥈</span>
+                <div class="top3-name" id="t2name">—</div>
+                <div class="top3-pts" id="t2pts">0</div>
+            </div>
+            <div class="top3-item place1" id="top1">
+                <span class="top3-medal">🥇</span>
+                <div class="top3-name" id="t1name">—</div>
+                <div class="top3-pts" id="t1pts">0</div>
+            </div>
+            <div class="top3-item place3" id="top3">
+                <span class="top3-medal">🥉</span>
+                <div class="top3-name" id="t3name">—</div>
+                <div class="top3-pts" id="t3pts">0</div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Table -->
+        <div class="lb-card">
+            <div class="lb-header"
+                style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem 1rem;">
+                <span>LEADERBOARD – TOP 50</span>
+                <button class="refresh-btn" onclick="loadLeaderboard()">↻ Refresh</button>
+            </div>
+            <div class="lb-header" style="background:none; border-top:none;">
+                <div>#</div>
+                <div>Player</div>
+                <div style="text-align:right">Points</div>
+                <div style="text-align:right">Level</div>
+            </div>
+            <div id="lbBody">
+                <div class="loading-lb">⟳ Loading players...</div>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-top:1rem;">
+            <a href="game.html" style="display:inline-block; padding:0.75rem 2rem;
+      background:linear-gradient(135deg,#a855f7,#7c3aed); border-radius:12px;
+      color:white; text-decoration:none; font-family:'Orbitron',monospace;
+      font-size:0.85rem; font-weight:700; box-shadow:0 4px 20px rgba(168,85,247,0.4);">
+                ⚡ PLAY NOW
+            </a>
+        </div>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/leaderboard.js"></script>
+</body>
+
+</html>
