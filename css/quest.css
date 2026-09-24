@@ -3,7 +3,7 @@
     --bg-mid: #132432;
     --font-pixel: 'VT323', monospace;
     --font-pixel-bold: 'Press Start 2P', cursive;
-    --font-modern: 'Space Grotesk', sans-serif;
+    --font-modern: 'VT323', monospace;
 }
 
 /* ————— NAVBAR ————— */
@@ -238,7 +238,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.55rem;
     font-weight: 900;
     color: #000;
@@ -252,7 +252,7 @@
 }
 
 .profile-info .username {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'Press Start 2P', cursive;
     font-size: 1.4rem;
     font-weight: 900;
     -webkit-background-clip: text;
@@ -296,7 +296,7 @@
     padding: 0.22rem 0.65rem;
     border-radius: 999px;
     font-size: 0.58rem;
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-weight: 700;
     letter-spacing: 0.05em;
 }
@@ -334,7 +334,7 @@
     border: none;
     border-radius: 12px;
     color: white;
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'Press Start 2P', cursive;
     font-size: 0.7rem;
     font-weight: 900;
     letter-spacing: 0.08em;
@@ -409,7 +409,7 @@
 }
 
 .stat-card .s-value {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 1.1rem;
     font-weight: 900;
     color: var(--stat-accent, #a855f7);
@@ -451,7 +451,7 @@
 }
 
 .card-title {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'Press Start 2P', cursive;
     font-size: 0.68rem;
     color: #a855f7;
     letter-spacing: 0.1em;
@@ -483,7 +483,7 @@
 }
 
 .ref-code {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 1.2rem;
     font-weight: 900;
     color: #f59e0b;
@@ -496,7 +496,7 @@
     border: 1px solid rgba(245, 158, 11, 0.35);
     border-radius: 8px;
     color: #f59e0b;
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.6rem;
     padding: 0.4rem 0.75rem;
     cursor: pointer;
@@ -550,7 +550,7 @@
 }
 
 .ref-stat .rs-val {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.85rem;
     font-weight: 700;
     color: #f59e0b;
@@ -598,7 +598,7 @@
 }
 
 .h-lvl {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.62rem;
     font-weight: 700;
     color: #f59e0b;
@@ -624,7 +624,7 @@
 }
 
 .h-pts {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.68rem;
     font-weight: 700;
     color: #a855f7;
@@ -751,7 +751,7 @@
 }
 
 .task-name {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.72rem;
     font-weight: 700;
     color: #e2e8f0;
@@ -764,7 +764,7 @@
 }
 
 .task-points {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.68rem;
     font-weight: 900;
     color: #f59e0b;
@@ -780,7 +780,7 @@
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 10px;
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.6rem;
     font-weight: 700;
     cursor: pointer;
@@ -863,7 +863,7 @@
 }
 
 .social-progress-text {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.58rem;
     color: #64748b;
     white-space: nowrap;
@@ -908,7 +908,7 @@
     border: 1px solid rgba(239, 68, 68, 0.2);
     border-radius: 10px;
     color: #ef4444;
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'VT323', monospace;
     font-size: 0.6rem;
     cursor: pointer;
     transition: all 0.25s;
@@ -940,7 +940,7 @@
 }
 
 .not-connected-card h2 {
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'Press Start 2P', cursive;
     font-size: 1rem;
     color: #a855f7;
     margin-bottom: 0.75rem;
@@ -961,7 +961,7 @@
     border: none;
     border-radius: 14px;
     color: white;
-    font-family: 'Space Grotesk', monospace;
+    font-family: 'Press Start 2P', cursive;
     font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
@@ -1041,7 +1041,7 @@
 }
 
 .char-modal-title {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Press Start 2P', cursive;
     color: #fff;
     font-size: 1.1rem;
     font-weight: 800;
@@ -1093,7 +1093,7 @@
     color: #fff;
     padding: 0.6rem 1.5rem;
     border-radius: 8px;
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Press Start 2P', cursive;
     font-size: 0.8rem;
     font-weight: 700;
     cursor: pointer;
