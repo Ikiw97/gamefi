@@ -15,7 +15,7 @@
     <meta name="description"
         content="View your Zico Rush GameFi player profile, stats, referral code, and game history." />
     <link rel="stylesheet" href="css/style.css" />
-    <!-- Pixel Font (VT323) and Space Grotesk -->
+    <!-- Pixel Font (VT323, Press Start 2P) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -42,7 +42,6 @@
     <!-- ————— NAVBAR ————— -->
     <nav class="navbar">
         <a href="index.html" class="nav-brand">
-            <span class="brand-text">ZICO RUSH</span>
         </a>
 
         <div class="nav-links">
@@ -121,7 +120,7 @@
                         <div class="card-title" style="color: #000; text-shadow: none;"><i
                                 class="ph-fill ph-certificate" style="color: #000;"></i> Early Adopter NFT</div>
                         <span class="card-badge" style="background: rgba(0,0,0,0.05); border-color: #000; color: #000;"
-                            id="mintStatusBadge">Available</span>
+                            id="mintStatusBadge">Coming Soon</span>
                     </div>
                     <p class="ref-info"
                         style="color: #000; text-shadow: none; margin-bottom: 0.75rem; position: relative; z-index: 2;">
@@ -130,14 +129,14 @@
                     <!-- Network Info -->
                     <div style="display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap;">
                         <div
-                            style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.8rem; font-family: 'Space Grotesk', monospace; background: rgba(0, 0, 0, 0.05); border: 1px solid #000000; color: #000000; font-weight: 800; text-shadow: none;">
-                            ⛓️ Base Network
+                            style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.8rem; font-family: 'VT323', monospace; background: rgba(0, 0, 0, 0.05); border: 1px solid #000000; color: #000000; font-weight: 800; text-shadow: none;">
+                            ⛓️ Giwa Chain
                         </div>
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                        <button id="btnMintBadge" onclick="mintBadge()"
-                            class="btn-play-now" style="background: #000; color: #fff; border: none;">
-                            💎 MINT BADGE NOW
+                        <button id="btnMintBadge" onclick="mintBadge()" disabled
+                            class="btn-play-now" style="background: #000; color: #fff; border: none; opacity: 0.6; cursor: not-allowed;">
+                            🔒 COMING SOON
                         </button>
                         <span id="mintErrorText"
                             style="color: #ef4444; font-size: 0.8rem; display: none; font-weight: bold;"></span>
