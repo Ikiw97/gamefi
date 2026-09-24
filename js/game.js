@@ -60,7 +60,7 @@ function showHTMLMenu() {
     initMenu();
 }
 
-function startGame() {
+async function startGame() {
     document.getElementById('htmlResult').style.display = 'none';
     document.getElementById('htmlMenu').style.display = 'none';
     document.getElementById('gameContainer').style.display = 'block';
@@ -69,6 +69,25 @@ function startGame() {
     // Show mobile controls if on mobile/touch device
     if (window.matchMedia("(pointer: coarse), (max-width: 768px)").matches) {
         document.getElementById('mobileControls').style.display = 'block';
+    }
+
+    // ── Fetch session token dari server (HMAC key tidak ada di client) ──
+    const wallet = localStorage.getItem('dr_wallet');
+    if (wallet && wallet !== 'guest' && window.supabaseClient) {
+        try {
+            const { data: tokenData, error: tokenErr } = await window.supabaseClient.functions.invoke('get-game-token', {
+                body: { wallet: wallet }
+            });
+            if (!tokenErr && tokenData && tokenData.sessionToken) {
+                window._gameSessionToken = tokenData.sessionToken;
+            } else {
+                console.warn('Could not fetch game session token:', tokenErr);
+                window._gameSessionToken = null;
+            }
+        } catch (e) {
+            console.warn('Session token fetch failed:', e.message);
+            window._gameSessionToken = null;
+        }
     }
 
     const gs = window.gameState;
