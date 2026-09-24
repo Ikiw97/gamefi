@@ -2,7 +2,7 @@
    Diamond Rush GameFi – Web3 Global Styles
    ============================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap');
 
 :root {
   /* Sleek Web3 Colors */
@@ -24,9 +24,9 @@
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
 
-  --font-heading: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-accent: 'Orbitron', sans-serif;
+  --font-heading: 'Press Start 2P', cursive;
+  --font-body: 'VT323', monospace;
+  --font-accent: 'Silkscreen', cursive;
 }
 
 * {
@@ -171,7 +171,7 @@ body {
 }
 
 .hero h1 {
-  font-family: '"Press Start 2P"', monospace;
+  font-family: 'Press Start 2P', monospace;
   font-size: 2rem;
   font-weight: 900;
   letter-spacing: 0.05em;
@@ -237,7 +237,7 @@ body {
 }
 
 .stat-item .stat-val {
-  font-family: '"Press Start 2P"', monospace;
+  font-family: 'Press Start 2P', monospace;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--primary);
@@ -296,7 +296,7 @@ body {
   color: white;
   font-size: 0.65rem;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
+  font-family: 'VT323', monospace;
 }
 
 .btn-wallet {
