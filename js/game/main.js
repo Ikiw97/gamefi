@@ -87,13 +87,17 @@ window.showToast = function (msg, color = '#a855f7', duration = 2000) {
     setTimeout(() => { toast.style.opacity = '0'; }, duration);
 };
 
-// ── Hidden HMAC ──
-const _k = [74,73,85,122,73,49,78,115,103,115,116,115,101,116,115,116,57,115,54,100,102,106,57,115,100,102,52,56,57,105,73,115,73,110,82,53,99,67,73,54,73,107];
-const _gk = () => String.fromCharCode(..._k);
+// ── HMAC key TIDAK ada di client ──
+// Signature di-generate server-side via get-game-token endpoint.
+// Client hanya menyimpan token sementara yang diberikan server saat mulai game.
 
 async function generateHMAC(message) {
+    // Ambil session token yang sudah di-generate server (disimpan saat game start)
+    const sessionToken = window._gameSessionToken;
+    if (!sessionToken) throw new Error('No game session token. Please restart game.');
+
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(_gk());
+    const keyData = encoder.encode(sessionToken);
     const msgData = encoder.encode(message);
 
     const cryptoKey = await crypto.subtle.importKey(
